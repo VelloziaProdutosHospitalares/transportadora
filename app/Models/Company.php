@@ -21,7 +21,5 @@ class Company extends Model
         'city',
         'state',
         'logo_path',
-        'contract',
-        'administrative_code',
     ];
 }

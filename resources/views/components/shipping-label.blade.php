@@ -79,12 +79,6 @@
         <p class="mt-0.5 text-[11px] font-bold leading-tight text-black">
             {{ $company?->trade_name ?? 'Empresa não cadastrada' }}
         </p>
-        <p class="mt-0.5 text-[8px] leading-snug text-gray-700">
-            {{ $labelData['service'] ?? '' }} · {{ isset($labelData['weight_grams']) ? $labelData['weight_grams'].' g' : '' }}
-            @if (! empty($labelData['tracking_code']))
-                <span class="block">Rastreio: {{ $labelData['tracking_code'] }}</span>
-            @endif
-        </p>
     </section>
 
     {{-- 4) Faixa de roteirização + código de barras --}}

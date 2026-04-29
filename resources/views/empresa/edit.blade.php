@@ -64,20 +64,20 @@
                 </div>
 
                 <div>
-                    <label for="contract" class="mb-1 block text-sm font-medium text-gray-700">Contrato</label>
-                    <input type="text" name="contract" id="contract" value="{{ old('contract', $company?->contract) }}" required class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                    @error('contract') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
-                </div>
-
-                <div>
-                    <label for="administrative_code" class="mb-1 block text-sm font-medium text-gray-700">Código administrativo</label>
-                    <input type="text" name="administrative_code" id="administrative_code" value="{{ old('administrative_code', $company?->administrative_code) }}" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
-                </div>
-
-                <div>
                     <label for="postal_code" class="mb-1 block text-sm font-medium text-gray-700">CEP</label>
-                    <input type="text" name="postal_code" id="postal_code" value="{{ old('postal_code', $company?->postal_code) }}" required placeholder="00000-000" class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
+                    <input
+                        type="text"
+                        name="postal_code"
+                        id="postal_code"
+                        value="{{ old('postal_code', $company?->postal_code) }}"
+                        maxlength="9"
+                        required
+                        placeholder="00000-000"
+                        autocomplete="postal-code"
+                        class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    />
                     @error('postal_code') <p class="mt-1 text-sm text-danger">{{ $message }}</p> @enderror
+                    <p class="mt-1 text-xs text-gray-500">Ao digitar 8 dígitos ou sair do campo, o endereço é preenchido pelo ViaCEP.</p>
                 </div>
 
                 <div class="sm:col-span-2">
@@ -134,3 +134,16 @@
         </form>
     </x-card>
 @endsection
+
+@push('scripts')
+    @include('partials.viacep-lookup', [
+        'viaCep' => [
+            'cepId' => 'postal_code',
+            'streetId' => 'street',
+            'districtId' => 'district',
+            'cityId' => 'city',
+            'stateId' => 'state',
+            'complementId' => 'complement',
+        ],
+    ])
+@endpush

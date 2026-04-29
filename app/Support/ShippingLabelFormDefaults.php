@@ -24,8 +24,6 @@ class ShippingLabelFormDefaults
             'district' => 'Jardins',
             'city' => 'Rio de Janeiro',
             'state' => 'RJ',
-            'weight_grams' => 1000,
-            'service' => 'SEDEX',
             'volume_of' => 1,
             'notes' => 'Entregar em horário comercial.',
             // Etiqueta térmica comum: 100 × 150 mm (≈ 4" × 6"; também existe 102 × 152 mm conforme o rolo).

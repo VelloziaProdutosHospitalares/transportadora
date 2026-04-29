@@ -173,6 +173,7 @@
                     @error('destinatario_cep')
                         <p class="mt-1 text-sm text-danger">{{ $message }}</p>
                     @enderror
+                    <p class="mt-1 text-xs text-gray-500">8 dígitos: endereço preenchido pelo ViaCEP (ou ao sair do campo).</p>
                 </div>
                 <div class="sm:col-span-2">
                     <label for="destinatario_endereco" class="mb-1 block text-sm font-medium text-gray-700">Endereço</label>
@@ -321,6 +322,15 @@
 @endsection
 
 @push('scripts')
+    @include('partials.viacep-lookup', [
+        'viaCep' => [
+            'cepId' => 'destinatario_cep',
+            'streetId' => 'destinatario_endereco',
+            'districtId' => 'destinatario_bairro',
+            'cityId' => 'destinatario_cidade',
+            'stateId' => 'destinatario_uf',
+        ],
+    ])
     <script>
         (function () {
             const serproLookupUrl = @json(route('pedidos.consulta-nfe-serpro'));
@@ -537,48 +547,6 @@
                     void trySerproLookup();
                 });
             }
-
-            const cepInput = document.getElementById('destinatario_cep');
-            const logradouro = document.getElementById('destinatario_endereco');
-            const bairro = document.getElementById('destinatario_bairro');
-            const cidade = document.getElementById('destinatario_cidade');
-            const uf = document.getElementById('destinatario_uf');
-
-            if (!cepInput) {
-                return;
-            }
-
-            cepInput.addEventListener('blur', function () {
-                const digits = (cepInput.value || '').replace(/\D/g, '');
-                if (digits.length !== 8) {
-                    return;
-                }
-
-                fetch('https://viacep.com.br/ws/' + digits + '/json/')
-                    .then(function (response) {
-                        return response.json();
-                    })
-                    .then(function (data) {
-                        if (!data || data.erro) {
-                            return;
-                        }
-                        if (logradouro && !logradouro.value) {
-                            logradouro.value = data.logradouro || '';
-                        }
-                        if (bairro && !bairro.value) {
-                            bairro.value = data.bairro || '';
-                        }
-                        if (cidade && !cidade.value) {
-                            cidade.value = data.localidade || '';
-                        }
-                        if (uf && !uf.value) {
-                            uf.value = (data.uf || '').toUpperCase();
-                        }
-                    })
-                    .catch(function () {
-                        /* silencioso: ViaCEP indisponível */
-                    });
-            });
         })();
     </script>
 @endpush

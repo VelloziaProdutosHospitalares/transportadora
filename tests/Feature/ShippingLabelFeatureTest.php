@@ -37,8 +37,6 @@ class ShippingLabelFeatureTest extends TestCase
             'district' => 'Centro',
             'city' => 'Teresina',
             'state' => 'PI',
-            'contract' => '9912623005',
-            'administrative_code' => '123456',
         ]);
 
         $response->assertStatus(302);
@@ -64,7 +62,6 @@ class ShippingLabelFeatureTest extends TestCase
             'district' => 'Centro',
             'city' => 'Teresina',
             'state' => 'PI',
-            'contract' => '9912623005',
         ]);
 
         $response->assertSessionHasErrors(['cnpj']);
@@ -85,7 +82,6 @@ class ShippingLabelFeatureTest extends TestCase
             'district' => 'Bela Vista',
             'city' => 'São Paulo',
             'state' => 'SP',
-            'contract' => 'CONTRATO XPTO',
         ]);
 
         $pedido = Pedido::query()->create([
@@ -107,8 +103,6 @@ class ShippingLabelFeatureTest extends TestCase
                 'district' => 'Jardins',
                 'city' => 'Rio de Janeiro',
                 'state' => 'RJ',
-                'weight_grams' => 1000,
-                'service' => 'SEDEX',
                 'volume_of' => 1,
                 'notes' => 'Entregar em horário comercial',
                 'label_width_mm' => 100,
@@ -170,7 +164,6 @@ class ShippingLabelFeatureTest extends TestCase
             'district' => 'Bela Vista',
             'city' => 'São Paulo',
             'state' => 'SP',
-            'contract' => '9912623005',
             'logo_path' => $path,
         ]);
 

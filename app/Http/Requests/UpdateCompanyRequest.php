@@ -37,8 +37,6 @@ class UpdateCompanyRequest extends FormRequest
             'city' => ['required', 'string', 'max:120'],
             'state' => ['required', 'string', Rule::in($this->brazilianStates())],
             'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
-            'contract' => ['required', 'string', 'max:120'],
-            'administrative_code' => ['nullable', 'string', 'max:120'],
         ];
     }
 
@@ -61,7 +59,6 @@ class UpdateCompanyRequest extends FormRequest
             'state.in' => 'Informe uma UF válida.',
             'logo.image' => 'A logo deve ser uma imagem válida.',
             'logo.mimes' => 'A logo deve estar em PNG, JPG ou WEBP.',
-            'contract.required' => 'Informe o contrato.',
         ];
     }
 
