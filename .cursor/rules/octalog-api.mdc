@@ -1,0 +1,41 @@
+---
+description: Octalog — envio/listagem de pedidos, SAC, webhook; injeção de serviço, erros e privacidade em logs
+globs: app/Services/Octalog*.php,app/Http/Controllers/Octalog*.php,app/Http/Controllers/Pedido*.php,app/DTOs/OctalogOrderData.php,app/Exceptions/OctalogException.php,config/services.php
+alwaysApply: false
+---
+
+# Octalog API — Integração
+
+## Container e serviços
+
+- Não instanciar `OctalogService` com `new` fora do container; **injetar** no construtor (controllers / outros services). O mesmo vale para `OctalogSacService` quando usar SAC.
+- Credenciais e URLs em `config/services.php` (`octalog`: `url`, `auth_url`, `usuario`, `senha`, `webhook_secret`).
+
+## Respostas HTTP e exceções
+
+- Capturar **`OctalogException`** na camada HTTP e converter em feedback ao usuário (flash / JSON), sem deixar estourar na interface.
+- Para `sendOrders` / `listOrders`: checar **`$result['success']`** antes de assumir `$result['data']`.
+- Contrato de envio: até **50** pedidos por chamada a `POST /pedido/salvar` (enforçado no `OctalogService`).
+- Contrato de consulta em lote: até **100** números de pedido por chamada a `POST /pedido/listar` (enforçado no `OctalogService::MAX_LISTAR_PEDIDOS` e no `ConsultarPedidosOctalogRequest`).
+
+## URL da etiqueta
+
+- A API pode devolver lista ou objeto; no código atual a etiqueta é lida do primeiro elemento com **`UrlEtiqueta`** ou **`urlEtiqueta`** (ver `PedidoController::extractLabelUrl`).
+- Tratar ausência de item ou valor `null` / string vazia.
+
+## Retry em 401
+
+- O cliente remove o token em cache e repete a requisição uma vez (padrão já usado em `OctalogService` para envio/listagem).
+
+## Logs e privacidade
+
+- Em **produção**, evitar registrar dados pessoais do destinatário (nome, documento, e-mail, telefone). Preferir identificadores (`pedido_id`, `numero_pedido`, status HTTP, mensagens agregadas).
+
+## Rotas relacionadas no repositório
+
+| Área | Exemplos em `routes/web.php` / `routes/api.php` |
+| ---- | ----------------------------------------------- |
+| CRUD pedido + envio | `Route::resource('pedidos', ...)` (ações limitadas) |
+| Consulta status | `pedidos.consulta-octalog.*` |
+| SAC / webhook config | `octalog.sac.webhook.*` |
+| Webhook inbound | `POST /api/octalog/webhook` (middleware `octalog.webhook.secret`) |

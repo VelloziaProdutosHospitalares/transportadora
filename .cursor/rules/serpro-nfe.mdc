@@ -1,0 +1,35 @@
+---
+description: Integração SERPRO — consulta NF-e (OAuth2, cache, retry, endpoint interno JSON)
+globs: app/Services/SerproNfeService.php,app/Http/Controllers/SerproNfeConsultaController.php,app/Http/Requests/ConsultaSerproNfeRequest.php,app/DTOs/SerproNfeConsultaData.php,app/Exceptions/SerproException.php,config/services.php
+alwaysApply: false
+---
+
+# SERPRO — Consulta NF-e
+
+## Segredos e configuração
+
+- Nunca versionar `consumer_key`, `consumer_secret`, `basic_auth_base64`. Usar `.env` e `config/services.php` (chave `serpro`).
+- Campos úteis no config: `token_url`, `consulta_base_url`, `timeout`, `verify_ssl`, `basic_auth_base64` (opcional, prioridade sobre key+secret no token).
+
+## Token OAuth2 (client_credentials)
+
+- **POST** ao endpoint de token (gateway SP usual: `https://gateway.apiserpro.serpro.gov.br/token`; gateway Brasília `https://apigateway.serpro.gov.br/token` consta **deprecated** no manual SERPRO).
+- `Content-Type: application/x-www-form-urlencoded`; corpo `grant_type=client_credentials`.
+- `Authorization: Basic` com Base64 de `key:secret` **sem newline** (em PHP: `base64_encode`; no shell evitar `echo ... | base64` sem `echo -n`).
+- Armazenar em **cache** com TTL a partir de `expires_in` (margem de segurança em segundos).
+
+## Consulta da NF-e
+
+- Validar **chave com 44 dígitos** antes da chamada HTTP.
+- **GET** com `Accept: application/json`; **um único** prefixo `Bearer ` + token.
+- Em **401**: invalidar cache do token, obter novo token, **repetir só uma vez** (sem loop).
+
+## LGPD e logs
+
+- Não persistir XML/JSON integral da NF sem necessidade de negócio; se persistir, documentar finalidade e retenção.
+- Não logar `consumer_secret`, token completo nem corpo sensível sem truncar/mascarar.
+
+## Endpoint no projeto
+
+- Rota **`POST`** nomeada `pedidos.consulta-nfe-serpro` → `SerproNfeConsultaController` (invokable) + `ConsultaSerproNfeRequest`.
+- Se `SerproNfeService::isConfigured()` for falso, resposta JSON amigável (ex.: *Integração SERPRO não configurada.*) sem quebrar a UI.

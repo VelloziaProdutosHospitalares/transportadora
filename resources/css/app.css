@@ -1,0 +1,38 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+
+    --color-primary: #2563eb;
+    --color-primary-hover: #1d4ed8;
+
+    --color-danger: #dc2626;
+
+    /* Feedback e superfícies — usar bg-*-soft / border-*-soft nos alertas */
+    --color-success: #047857;
+    --color-success-soft: #ecfdf5;
+    --color-success-border: #a7f3d0;
+
+    --color-error-soft: #fef2f2;
+    --color-error-border: #fecaca;
+
+    --color-muted: #4b5563;
+    --color-surface: #ffffff;
+    --color-page: #f9fafb;
+}
+
+@layer base {
+    /*
+      Foco visível para teclado sem mudar cliques com mouse.
+      Componentes com ring próprio podem sobrescrever.
+    */
+    :where(a, button, input, select, textarea, summary):focus-visible {
+        outline: none;
+    }
+}

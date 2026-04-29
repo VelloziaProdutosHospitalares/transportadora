@@ -1,0 +1,79 @@
+---
+description: Tailwind CSS 4 — Vite, @theme em app.css, utilitários e anti-padrões v3
+globs: resources/**
+alwaysApply: false
+---
+
+# Tailwind CSS 4 — Convenções
+
+## Versão e configuração
+
+| Item | Projeto atual |
+| ---- | ------------- |
+| Integração | Plugin `@tailwindcss/vite` (sem `tailwind.config.js` clássico) |
+| Entrada CSS | `resources/css/app.css` |
+| Tema | Diretiva `@theme` no mesmo arquivo |
+
+Referência real do tema em `resources/css/app.css` (ajuste tokens conforme evolução):
+
+```css
+@import 'tailwindcss';
+
+@theme {
+    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, ...;
+
+    --color-primary: #2563eb;
+    --color-primary-hover: #1d4ed8;
+
+    --color-danger: #dc2626;
+
+    --color-success: #047857;
+    --color-success-soft: #ecfdf5;
+    --color-success-border: #a7f3d0;
+
+    --color-error-soft: #fef2f2;
+    --color-error-border: #fecaca;
+
+    --color-muted: #4b5563;
+    --color-surface: #ffffff;
+    --color-page: #f9fafb;
+}
+```
+
+(`@source` para Blade/JS já está no `app.css` do repositório.)
+
+### Breakpoints (padrão Tailwind v4)
+
+| Nome | Min width | Uso típico |
+| ---- | --------- | ---------- |
+| `sm` | 40rem (640px) | grid 2 colunas, mais espaço horizontal |
+| `md` | 48rem (768px) | menu desktop visível, tabela pode relaxar `min-width` |
+| `lg` | 64rem (1024px) | grids em 2–3 colunas, webhook em 3 colunas |
+
+Mobile-first: estilos base para ~360px; refinar com `sm:` / `md:` / `lg:`.
+
+## Uso
+
+- Preferir **utilitários** a CSS inline ou arquivos ad-hoc.
+- Usar tokens do `@theme` (`bg-primary`, `text-danger`, …) quando existirem.
+- Evitar padrões da era Tailwind 3 (`purge` em JS, `content` em config legado).
+- Layout: `flex`, `grid`, `gap-*` em vez de margens esparsas entre filhos.
+
+## Padrões visuais sugeridos
+
+| Elemento | Exemplo / componente |
+| -------- | --------------------- |
+| Área de página (layout) | `max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8` no `<main>` |
+| Fundo da página | `bg-page` (token `--color-page`) |
+| Card | `<x-card>` — variantes `default`, `highlight` (nota fiscal), `muted` (tracejado) |
+| Botão | `<x-button>` — `variant`: `primary`, `secondary`, `ghost`, `danger`; `href` vira `<a>` |
+| Alertas flash | `<x-alert variant="success|error">` |
+| Erro de campo | `text-danger text-sm mt-1` após o input |
+| Foco | `focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2` em links/controles interativos |
+| Toque | Botões com altura mínima ~44px no componente `button`; formulários longos com `text-base` em mobile e `sm:text-sm` quando fizer sentido |
+
+## Evitar
+
+- Criar `tailwind.config.js` só para este stack (v4 + Vite usa CSS-first).
+- `@apply` em excesso para utilitários triviais.
+- Imports `tailwindcss/base` / `components` — substituídos por `@import 'tailwindcss'`.

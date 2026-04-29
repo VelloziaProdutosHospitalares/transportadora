@@ -1,0 +1,35 @@
+---
+description: Convenções gerais do projeto transportadora — stack, idioma e escopo (regra mestre; demais regras complementam sem contradizer)
+alwaysApply: true
+---
+
+# Projeto Transportadora — Regras gerais
+
+## Idioma
+
+| Contexto | Idioma |
+| -------- | ------ |
+| Respostas de agente / documentação auxiliar | Português (pt-BR) |
+| Variáveis, funções, classes, nomes de rotas | Inglês |
+| Mensagens de validação e labels de UI | Português |
+
+## Stack (conferida em `composer.json` e `package.json`)
+
+| Camada | Tecnologia |
+| ------ | ---------- |
+| Backend | Laravel `^13`, PHP `^8.3` |
+| Views | Blade (`.blade.php`) — sem Livewire, sem Inertia |
+| CSS | Tailwind CSS `^4` via `@tailwindcss/vite` |
+| Assets | Vite `^8`, `laravel-vite-plugin` `^3` |
+| Testes | PHPUnit `^12.5` |
+| DB (desenvolvimento) | SQLite (padrão do skeleton) / MySQL em produção conforme `.env` |
+
+## Domínio
+
+Sistema de transportadora: **fretes**, **veículos** e **motoristas**; o repositório inclui **pedidos** e integrações (**Octalog**, **SERPRO**).
+
+## Escopo de mudanças
+
+- Fazer apenas o solicitado — sem refatorações amplas não pedidas.
+- Mudanças mínimas e focadas na tarefa.
+- Não criar documentação na raíz do projeto (README, guias) salvo pedido explícito.

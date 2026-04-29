@@ -1,0 +1,48 @@
+---
+description: Convenções Laravel 13 / PHP 8.3 — controllers, models, requests, rotas e segurança backend
+globs: app/**
+alwaysApply: false
+---
+
+# Laravel 13 — Convenções PHP
+
+Estrutura e estilo alinham-se às **regras gerais** (`projeto.mdc`): escopo mínimo, nomes técnicos em inglês.
+
+## Estrutura
+
+- Controllers finos: lógica pesada em services ou actions dedicadas.
+- Rotas web em `routes/web.php`; rotas API em `routes/api.php` quando existir endpoint HTTP correspondente.
+- Nomes de rotas: `recurso.action` (ex.: `pedidos.index`, `pedidos.store`).
+
+## Validação
+
+- Preferir **Form Request** (`php artisan make:request`) em regras não triviais; validação inline só quando o fluxo for mínimo.
+- Mensagens customizadas no método `messages()` do Form Request, em pt-BR.
+
+## Autorização
+
+- Usar **Policy** (`php artisan make:policy`) quando houver regras por recurso.
+- `$this->authorize()` no controller ou middleware `can` na rota.
+
+## Eloquent
+
+- Declarar `$fillable` nos models (evitar `$guarded = []` sem revisão explícita).
+- **Scopes** locais para filtros reutilizáveis (`scopeAtivo`, etc.).
+- Relacionamentos com tipo de retorno (`BelongsTo`, `HasMany`, …).
+
+## Migrations
+
+- Nomes descritivos: `create_fretes_table`, `add_status_to_fretes_table`.
+- Implementar `down()` de forma reversível.
+- Chaves estrangeiras: `$table->foreignId('veiculo_id')->constrained()->cascadeOnDelete()`.
+
+## Padrões PHP
+
+- **PSR-12**; formatar com **Laravel Pint** (`./vendor/bin/pint`).
+- Tipagem de retorno em métodos públicos e propriedades tipadas (PHP 8.3).
+
+## Segurança
+
+- Formulários Blade com `@csrf`.
+- Secrets apenas em `.env` / `config()`.
+- Saída escapada com `{{ }}`; `{!! !!}` só com conteúdo confiável.

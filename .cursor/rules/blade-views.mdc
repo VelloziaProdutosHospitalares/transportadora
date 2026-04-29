@@ -1,0 +1,69 @@
+---
+description: Convenções Blade — layouts, componentes, views e formulários (sem Livewire/Inertia)
+globs: resources/views/**
+alwaysApply: false
+---
+
+# Blade — Convenções de views
+
+## Layout principal
+
+Layout base: `resources/views/layouts/app.blade.php` com `@yield('content')`, `@stack('scripts')`, `@vite` apenas aqui, `<main id="conteudo-principal">`, navegação responsiva (links horizontais a partir de `md:`, menu `<details>` em telas menores), rodapé discreto e flash via `<x-alert>`.
+
+## Estrutura de pastas (padrão sugerido)
+
+```text
+resources/views/
+├── layouts/
+│   └── app.blade.php
+├── components/
+│   ├── alert.blade.php
+│   ├── button.blade.php
+│   ├── card.blade.php
+│   ├── nav-link.blade.php
+│   └── page-header.blade.php
+├── fretes/
+│   ├── index.blade.php
+│   ├── create.blade.php
+│   ├── edit.blade.php
+│   └── show.blade.php
+└── partials/
+```
+
+## Componentes de UI (tags)
+
+| Tag | Uso |
+| --- | --- |
+| `<x-page-header>` | Título `title`, opcional `backHref` / `backLabel`, slots `description` e `actions` |
+| `<x-button>` | `variant` primary (padrão), secondary, ghost, danger; `href` opcional |
+| `<x-card>` | Container de bloco; variantes `default`, `highlight`, `muted` |
+| `<x-alert>` | Feedback `success` ou `error` (flash ou erros agrupados) |
+| `<x-nav-link>` | Link da barra; prop `accent` para destaque tipo CTA (“Novo pedido”) |
+
+Cada tela com conteúdo principal deve ter um `<h1>` (via `page-header` ou manualmente dentro de `@section('content')`).
+
+## Regras
+
+- `@extends('layouts.app')` + `@section('content')` nas páginas de recurso.
+- `@vite([...])` **somente no layout**, não nas views filhas.
+- UI reutilizável: `<x-componente>` (anônimo ou de classe).
+- Sem lógica PHP pesada nas views — usar controller, View Composer ou helpers.
+- Erros: `@error('campo')` ou `$errors->first('campo')`.
+- Listas: `@forelse` / `@empty`; paginação: `{{ $registros->links() }}`.
+
+## Formulários
+
+```blade
+<form method="POST" action="{{ route('fretes.store') }}">
+    @csrf
+    <button type="submit">Salvar</button>
+</form>
+```
+
+```blade
+<form method="POST" action="{{ route('fretes.update', $frete) }}">
+    @csrf
+    @method('PUT')
+    {{-- campos --}}
+</form>
+```
