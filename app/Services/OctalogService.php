@@ -177,9 +177,22 @@ class OctalogService
     /** Executa a requisição de envio de pedidos usando o token resolvido. */
     private function postPedidos(array $payload): Response
     {
-        return Http::withHeaders(['token' => $this->resolveToken()])
+        // dd([
+        //     'url'     => "{$this->url}/pedido/salvar",
+        //     'payload' => $payload,
+        // ]);
+
+        $response = Http::withHeaders(['token' => $this->resolveToken()])
             ->asJson()
             ->post("{$this->url}/pedido/salvar", $payload);
+
+        // dd([
+        //     'status'  => $response->status(),
+        //     'headers' => $response->headers(),
+        //     'body'    => $response->json() ?? $response->body(),
+        // ]);
+
+        return $response;
     }
 
     /**

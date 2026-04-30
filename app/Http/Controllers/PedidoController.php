@@ -84,12 +84,29 @@ class PedidoController extends Controller
             'Email' => $emailDest,
         ];
 
+        $company = Company::query()->first();
+
+        $remetente = $company !== null ? [
+            'RazaoSocial' => $company->legal_name,
+            'CNPJ' => preg_replace('/\D+/', '', (string) $company->cnpj),
+            'InscricaoEstadual' => $company->state_registration,
+            'Endereco' => $company->street,
+            'Numero' => $company->number,
+            'Bairro' => $company->district,
+            'Cidade' => $company->city,
+            'CEP' => preg_replace('/\D+/', '', (string) $company->postal_code),
+            'UF' => strtoupper((string) $company->state),
+            'Telefone' => $company->phone,
+            'Email' => $company->email,
+        ] : null;
+
         $orderData = new OctalogOrderData(
             pedido: $pedido->numero_pedido,
             idPrazoEntrega: (int) $validated['id_prazo_entrega'],
             totalVolumes: (int) $validated['total_volumes'],
             dataVenda: null,
             dadosFiscais: $dadosFiscais,
+            remetente: $remetente,
             destinatario: $destinatario,
         );
 
