@@ -23,6 +23,10 @@ class Pedido extends Model
         'destinatario_snapshot',
         'url_etiqueta',
         'erro_mensagem',
+        'octalog_id',
+        'octalog_status_id',
+        'octalog_status_text',
+        'octalog_status_at',
     ];
 
     protected function casts(): array
@@ -33,6 +37,7 @@ class Pedido extends Model
             'octalog_webhook_events' => 'array',
             'destinatario_snapshot' => 'array',
             'status' => 'string',
+            'octalog_status_at' => 'datetime',
         ];
     }
 

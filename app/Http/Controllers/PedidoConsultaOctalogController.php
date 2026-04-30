@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\OctalogException;
 use App\Http\Requests\ConsultarPedidosOctalogRequest;
+use App\Models\Pedido;
 use App\Services\OctalogService;
 use App\Support\OctalogStatusAtividade;
 use Illuminate\Http\RedirectResponse;
@@ -45,7 +46,11 @@ class PedidoConsultaOctalogController extends Controller
 
         $data = is_array($result['data']) ? $result['data'] : [];
 
+        $pedidosDb = Pedido::whereIn('numero_pedido', $numeros)->get()->keyBy('numero_pedido');
+
         $linhas = [];
+        $totalAtualizados = 0;
+
         foreach ($data as $item) {
             if (! is_array($item)) {
                 continue;
@@ -58,11 +63,34 @@ class PedidoConsultaOctalogController extends Controller
             $idOctalog = isset($item['ID']) && is_numeric($item['ID']) ? (int) $item['ID'] : null;
 
             $dataEventoExibicao = '';
+            $dataEventoCarbonUtc = null;
             if ($dataEventoRaw !== '') {
                 try {
-                    $dataEventoExibicao = Carbon::parse($dataEventoRaw)->timezone((string) config('app.timezone'))->format('d/m/Y H:i');
+                    $dataEventoCarbonUtc = Carbon::parse($dataEventoRaw)->utc();
+                    $dataEventoExibicao = $dataEventoCarbonUtc->timezone((string) config('app.timezone'))->format('d/m/Y H:i');
                 } catch (\Throwable) {
                     $dataEventoExibicao = $dataEventoRaw;
+                }
+            }
+
+            $statusAtualizado = false;
+
+            /** @var Pedido|null $pedido */
+            $pedido = $pedidosDb->get($pedidoStr);
+            if ($pedido !== null && $idStatus !== null) {
+                $statusMudou = $pedido->octalog_status_id !== $idStatus;
+                $idOctalogMudou = $idOctalog !== null && $pedido->octalog_id !== $idOctalog;
+
+                if ($statusMudou || $idOctalogMudou) {
+                    $pedido->octalog_status_id = $idStatus;
+                    $pedido->octalog_status_text = $statusApi !== '' ? $statusApi : null;
+                    $pedido->octalog_status_at = $dataEventoCarbonUtc ?? now();
+                    if ($idOctalog !== null) {
+                        $pedido->octalog_id = $idOctalog;
+                    }
+                    $pedido->save();
+                    $statusAtualizado = true;
+                    $totalAtualizados++;
                 }
             }
 
@@ -73,12 +101,20 @@ class PedidoConsultaOctalogController extends Controller
                 'Status' => $statusApi,
                 'DataEventoExibicao' => $dataEventoExibicao,
                 'nome_catalogo' => $idStatus !== null ? OctalogStatusAtividade::labelForId($idStatus) : null,
+                'status_atualizado' => $statusAtualizado,
             ];
         }
+
+        $mensagemAtualizacao = match (true) {
+            $totalAtualizados === 1 => '1 pedido atualizado no sistema.',
+            $totalAtualizados > 1 => "{$totalAtualizados} pedidos atualizados no sistema.",
+            default => null,
+        };
 
         return view('pedidos.consulta-octalog', [
             'resultados' => $linhas,
             'listaPedidosConsultados' => $numeros,
+            'mensagemAtualizacao' => $mensagemAtualizacao,
         ]);
     }
 

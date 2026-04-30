@@ -48,6 +48,10 @@
 
     @isset($listaPedidosConsultados)
         @if (! empty($resultados))
+            @isset($mensagemAtualizacao)
+                <x-alert variant="success" class="mb-6">{{ $mensagemAtualizacao }}</x-alert>
+            @endisset
+
             <x-card aria-labelledby="result-heading">
                 <h2 id="result-heading" class="mb-4 text-lg font-semibold text-gray-900">Resultado</h2>
                 <p class="mb-4 text-xs text-gray-500">
@@ -71,7 +75,14 @@
                         <tbody class="divide-y divide-gray-100 bg-white">
                             @foreach ($resultados as $row)
                                 <tr class="align-top">
-                                    <td class="whitespace-nowrap px-3 py-2 font-mono text-xs text-gray-900">{{ $row['Pedido'] }}</td>
+                                    <td class="whitespace-nowrap px-3 py-2 font-mono text-xs text-gray-900">
+                                        {{ $row['Pedido'] }}
+                                        @if ($row['status_atualizado'] ?? false)
+                                            <span class="ml-1 inline-flex items-center rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success ring-1 ring-inset ring-success/30">
+                                                Atualizado
+                                            </span>
+                                        @endif
+                                    </td>
                                     <td class="whitespace-nowrap px-3 py-2 text-gray-700">{{ $row['ID'] ?? '—' }}</td>
                                     <td class="whitespace-nowrap px-3 py-2 text-gray-700">{{ $row['IDStatus'] ?? '—' }}</td>
                                     <td class="px-3 py-2 text-gray-800">{{ $row['Status'] }}</td>
