@@ -21,7 +21,23 @@ class ConfigureOctalogSacWebhookRequest extends FormRequest
             'url' => ['required', 'url', 'max:2048'],
             'limite_envio' => ['required', 'integer', 'min:1', 'max:10000'],
             'data_inicio_envio' => ['required', 'date'],
-            'headers_raw' => ['nullable', 'string', 'max:32000'],
+            'headers_raw' => ['nullable', 'string', 'max:32000', function (string $attribute, mixed $value, \Closure $fail): void {
+                if (! is_string($value) || trim($value) === '') {
+                    return;
+                }
+                $lines = preg_split('/\r\n|\r|\n/', $value) ?: [];
+                foreach ($lines as $line) {
+                    $t = trim($line);
+                    if ($t === '') {
+                        continue;
+                    }
+                    if (! str_contains($t, ':')) {
+                        $fail("Os headers devem seguir o padrão \"chave:valor\" (ex.: Authorization:Bearer seu_token). Linha inválida: \"{$t}\".");
+
+                        return;
+                    }
+                }
+            }],
             'contato_nome' => ['required', 'string', 'max:255'],
             'contato_email' => ['required', 'email', 'max:255'],
             'contato_celular' => ['required', 'string', 'max:32'],
