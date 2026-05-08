@@ -87,6 +87,9 @@
                     <x-nav-link href="{{ route('octalog.sac.webhook.index') }}" :active="request()->routeIs('octalog.sac.webhook.*')">
                         Webhook SAC
                     </x-nav-link>
+                    <x-nav-link href="{{ route('octalog.pedidos.webhook.index') }}" :active="request()->routeIs('octalog.pedidos.webhook.*')">
+                        Webhook pedidos
+                    </x-nav-link>
                 </div>
 
                 {{-- Mobile: menu colapsável --}}
@@ -151,6 +154,13 @@
                                 :active="request()->routeIs('octalog.sac.webhook.*')"
                             >
                                 Webhook SAC
+                            </x-nav-link>
+                            <x-nav-link
+                                class="w-full justify-start px-4 py-3"
+                                href="{{ route('octalog.pedidos.webhook.index') }}"
+                                :active="request()->routeIs('octalog.pedidos.webhook.*')"
+                            >
+                                Webhook pedidos
                             </x-nav-link>
                         </div>
                     </div>

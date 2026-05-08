@@ -8,7 +8,7 @@ alwaysApply: false
 
 ## Container e serviços
 
-- Não instanciar `OctalogService` com `new` fora do container; **injetar** no construtor (controllers / outros services). O mesmo vale para `OctalogSacService` quando usar SAC.
+- Não instanciar `OctalogService` com `new` fora do container; **injetar** no construtor (controllers / outros services). O mesmo vale para `OctalogSacService` (SAC) e `OctalogPedidosWebhookService` (configuração do webhook de tracking de pedidos).
 - Credenciais e URLs em `config/services.php` (`octalog`: `url`, `auth_url`, `usuario`, `senha`, `webhook_secret`).
 
 ## Respostas HTTP e exceções
@@ -38,4 +38,5 @@ alwaysApply: false
 | CRUD pedido + envio | `Route::prefix('empresas/{company}/pedidos')->...` (index, create, store, show) |
 | Consulta status | `empresas.consulta_octalog.*` (escopo por empresa; só atualiza números da empresa corrente) |
 | SAC / webhook config | `octalog.sac.webhook.*` |
+| Pedidos / webhook tracking | `octalog.pedidos.webhook.*` |
 | Webhook inbound | `POST /api/octalog/webhook` (middleware `octalog.webhook.secret`) |

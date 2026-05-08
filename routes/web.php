@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\OctalogPedidosWebhookConfigController;
 use App\Http\Controllers\OctalogSacWebhookConfigController;
 use App\Http\Controllers\PedidoConsultaOctalogController;
 use App\Http\Controllers\PedidoController;
@@ -92,3 +93,10 @@ Route::post('octalog/sac/webhook', [OctalogSacWebhookConfigController::class, 'u
     ->name('octalog.sac.webhook.update');
 Route::post('octalog/sac/webhook/consultar', [OctalogSacWebhookConfigController::class, 'consultar'])
     ->name('octalog.sac.webhook.consultar');
+
+Route::get('octalog/pedidos/webhook', [OctalogPedidosWebhookConfigController::class, 'index'])
+    ->name('octalog.pedidos.webhook.index');
+Route::post('octalog/pedidos/webhook', [OctalogPedidosWebhookConfigController::class, 'update'])
+    ->name('octalog.pedidos.webhook.update');
+Route::post('octalog/pedidos/webhook/consultar', [OctalogPedidosWebhookConfigController::class, 'consultar'])
+    ->name('octalog.pedidos.webhook.consultar');

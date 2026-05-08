@@ -22,6 +22,7 @@ description: Fluxo de pedidos com API Octalog (envio, status, etiqueta, SAC e co
 | Exceção | `app/Exceptions/OctalogException.php` |
 | Consulta por número | `PedidoConsultaOctalogController` — rotas `empresas.consulta_octalog.*` (escopo `{company}`) |
 | SAC (ticket / webhook UI) | `PedidoSacTicketController`, `OctalogSacWebhookConfigController`, `OctalogSacService` |
+| Webhook tracking (config API pedidos) | `OctalogPedidosWebhookConfigController`, `OctalogPedidosWebhookService` — `octalog.pedidos.webhook.*` |
 | Webhook inbound | `routes/api.php` → `OctalogWebhookController`, `OctalogInboundWebhookProcessor` |
 | Model | `app/Models/Pedido.php` — status, resposta, rótulo de atividade |
 
@@ -30,7 +31,8 @@ description: Fluxo de pedidos com API Octalog (envio, status, etiqueta, SAC e co
 - `empresas.pedidos.*` — `index`, `create`, `store`, `show` aninhadas em `{company}`.
 - `empresas.consulta_octalog.*` — consulta em lote na API só para pedidos da empresa.
 - `empresas.pedidos.sac.ticket.*` — abertura/cancelamento de ticket.
-- `octalog.sac.webhook.*` — configurar/consultar webhook SAC.
+- `octalog.sac.webhook.*` — configurar/consultar webhook SAC (`/sac/webhook/configurancao`).
+- `octalog.pedidos.webhook.*` — configurar/consultar webhook de movimentações de pedidos (`/webhook/configurancao`).
 
 ## Ao implementar ou alterar o fluxo de criação
 
