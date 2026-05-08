@@ -1,12 +1,5 @@
 @php
     $viteAssetsAvailable = file_exists(public_path('hot')) || file_exists(public_path('build/manifest.json'));
-    $navItems = [
-        ['route' => 'pedidos.index', 'match' => 'pedidos.index', 'label' => 'Pedidos'],
-        ['route' => 'empresa.edit', 'match' => 'empresa.*', 'label' => 'Empresa'],
-        // ['route' => 'etiquetas.index', 'match' => 'etiquetas.*', 'label' => 'Etiquetas'],
-        ['route' => 'pedidos.consulta-octalog.create', 'match' => 'pedidos.consulta-octalog.*', 'label' => 'Consulta Octalog'],
-        ['route' => 'octalog.sac.webhook.index', 'match' => 'octalog.sac.webhook.*', 'label' => 'Webhook SAC'],
-    ];
 @endphp
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
@@ -67,20 +60,32 @@
 
                 {{-- Desktop --}}
                 <div class="hidden items-center gap-1 md:flex lg:gap-2">
-                    @foreach ($navItems as $item)
-                        <x-nav-link
-                            href="{{ route($item['route']) }}"
-                            :active="request()->routeIs($item['match'])"
-                        >
-                            {{ $item['label'] }}
+                    <x-nav-link href="{{ route('empresas.index') }}" :active="request()->routeIs('empresas.index', 'empresas.create', 'empresas.edit')">
+                        Empresas
+                    </x-nav-link>
+                    @isset($navCompany)
+                        <x-nav-link href="{{ route('empresas.pedidos.index', $navCompany) }}" :active="request()->routeIs('empresas.pedidos.index')">
+                            Pedidos
                         </x-nav-link>
-                    @endforeach
-                    <x-nav-link
-                        href="{{ route('pedidos.create') }}"
-                        :active="request()->routeIs('pedidos.create')"
-                        accent
-                    >
-                        Novo pedido
+                        <x-nav-link
+                            href="{{ route('empresas.consulta_octalog.create', $navCompany) }}"
+                            :active="request()->routeIs('empresas.consulta_octalog.*')"
+                        >
+                            Consulta Octalog
+                        </x-nav-link>
+                        <x-nav-link href="{{ route('empresas.etiquetas.index', $navCompany) }}" :active="request()->routeIs('empresas.etiquetas.index')">
+                            Etiquetas
+                        </x-nav-link>
+                        <x-nav-link
+                            href="{{ route('empresas.pedidos.create', $navCompany) }}"
+                            :active="request()->routeIs('empresas.pedidos.create')"
+                            accent
+                        >
+                            Novo pedido
+                        </x-nav-link>
+                    @endisset
+                    <x-nav-link href="{{ route('octalog.sac.webhook.index') }}" :active="request()->routeIs('octalog.sac.webhook.*')">
+                        Webhook SAC
                     </x-nav-link>
                 </div>
 
@@ -102,22 +107,50 @@
                         role="presentation"
                     >
                         <div class="flex flex-col gap-1 px-2 pb-1">
-                            @foreach ($navItems as $item)
+                            <x-nav-link
+                                class="w-full justify-start px-4 py-3"
+                                href="{{ route('empresas.index') }}"
+                                :active="request()->routeIs('empresas.index', 'empresas.create', 'empresas.edit')"
+                            >
+                                Empresas
+                            </x-nav-link>
+                            @isset($navCompany)
                                 <x-nav-link
                                     class="w-full justify-start px-4 py-3"
-                                    href="{{ route($item['route']) }}"
-                                    :active="request()->routeIs($item['match'])"
+                                    href="{{ route('empresas.pedidos.index', $navCompany) }}"
+                                    :active="request()->routeIs('empresas.pedidos.index')"
                                 >
-                                    {{ $item['label'] }}
+                                    Pedidos
                                 </x-nav-link>
-                            @endforeach
+                                <x-nav-link
+                                    class="w-full justify-start px-4 py-3"
+                                    href="{{ route('empresas.consulta_octalog.create', $navCompany) }}"
+                                    :active="request()->routeIs('empresas.consulta_octalog.*')"
+                                >
+                                    Consulta Octalog
+                                </x-nav-link>
+                                <x-nav-link
+                                    class="w-full justify-start px-4 py-3"
+                                    href="{{ route('empresas.etiquetas.index', $navCompany) }}"
+                                    :active="request()->routeIs('empresas.etiquetas.index')"
+                                >
+                                    Etiquetas
+                                </x-nav-link>
+                                <x-nav-link
+                                    class="w-full justify-center px-4 py-3"
+                                    href="{{ route('empresas.pedidos.create', $navCompany) }}"
+                                    :active="request()->routeIs('empresas.pedidos.create')"
+                                    accent
+                                >
+                                    Novo pedido
+                                </x-nav-link>
+                            @endisset
                             <x-nav-link
-                                class="w-full justify-center px-4 py-3"
-                                href="{{ route('pedidos.create') }}"
-                                :active="request()->routeIs('pedidos.create')"
-                                accent
+                                class="w-full justify-start px-4 py-3"
+                                href="{{ route('octalog.sac.webhook.index') }}"
+                                :active="request()->routeIs('octalog.sac.webhook.*')"
                             >
-                                Novo pedido
+                                Webhook SAC
                             </x-nav-link>
                         </div>
                     </div>

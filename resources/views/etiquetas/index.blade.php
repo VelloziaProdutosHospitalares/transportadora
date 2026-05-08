@@ -3,9 +3,9 @@
 @section('title', 'Etiquetas — '.config('app.name'))
 
 @section('content')
-    <x-page-header title="Etiquetas geradas">
+    <x-page-header title="Etiquetas — {{ $company->trade_name }}">
         <x-slot name="description">
-            <p>Listagem de etiquetas Octalog e térmicas vinculadas aos pedidos, com status de impressão.</p>
+            <p>Etiquetas Octalog e térmicas vinculadas aos pedidos desta empresa, com status de impressão.</p>
         </x-slot>
     </x-page-header>
 
@@ -13,7 +13,7 @@
         @if ($labels->isEmpty())
             <p class="text-sm text-gray-600">Nenhuma etiqueta registrada ainda. Etiquetas Octalog aparecem após envio com URL retornada; etiquetas térmicas ao visualizar a prévia na página do pedido.</p>
             <p class="mt-4">
-                <x-button href="{{ route('pedidos.index') }}">Ir para pedidos</x-button>
+                <x-button href="{{ route('empresas.pedidos.index', $company) }}">Ir para pedidos</x-button>
             </p>
         @else
             <div class="overflow-x-auto">
@@ -35,7 +35,7 @@
                                     {{ $label->created_at?->format('d/m/Y H:i') }}
                                 </td>
                                 <td class="whitespace-nowrap py-3 pr-4">
-                                    <a href="{{ route('pedidos.show', $label->pedido) }}" class="font-medium text-primary hover:underline">
+                                    <a href="{{ route('empresas.pedidos.show', [$company, $label->pedido]) }}" class="font-medium text-primary hover:underline">
                                         {{ $label->pedido->numero_formatado }}
                                     </a>
                                 </td>
@@ -65,7 +65,7 @@
                                             </x-button>
                                         @endif
                                         @if (! $label->isPrinted())
-                                            <form method="POST" action="{{ route('etiquetas.mark-printed', $label) }}" class="inline">
+                                            <form method="POST" action="{{ route('empresas.etiquetas.mark-printed', [$company, $label]) }}" class="inline">
                                                 @csrf
                                                 <x-button type="submit" class="text-xs">Marcar impressa</x-button>
                                             </form>

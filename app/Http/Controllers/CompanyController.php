@@ -12,20 +12,29 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CompanyController extends Controller
 {
-    public function edit(): View
+    public function index(): View
     {
-        $company = Company::query()->first();
+        $companies = Company::query()->orderBy('trade_name')->paginate(15)->withQueryString();
 
+        return view('empresa.index', compact('companies'));
+    }
+
+    public function create(): View
+    {
+        return view('empresa.edit', ['company' => null]);
+    }
+
+    public function edit(Company $company): View
+    {
         return view('empresa.edit', compact('company'));
     }
 
     /**
      * Serve o arquivo da logo a partir de storage/app/public (não depende de symlink public/storage).
      */
-    public function showLogo(): StreamedResponse
+    public function showLogo(Company $company): StreamedResponse
     {
-        $company = Company::query()->first();
-        $path = $company?->logo_path;
+        $path = $company->logo_path;
 
         if (! is_string($path) || $path === '' || ! Storage::disk('public')->exists($path)) {
             abort(404);
@@ -39,16 +48,15 @@ class CompanyController extends Controller
         $data = $request->validated();
         $data['logo_path'] = $this->storeLogo($request);
 
-        Company::query()->create($data);
+        $company = Company::query()->create($data);
 
         return redirect()
-            ->route('empresa.edit')
-            ->with('success', 'Dados da empresa salvos com sucesso.');
+            ->route('empresas.edit', $company)
+            ->with('success', 'Empresa criada com sucesso.');
     }
 
-    public function update(UpdateCompanyRequest $request): RedirectResponse
+    public function update(UpdateCompanyRequest $request, Company $company): RedirectResponse
     {
-        $company = Company::query()->firstOrFail();
         $data = $request->validated();
 
         if ($request->hasFile('logo')) {
@@ -63,7 +71,7 @@ class CompanyController extends Controller
         $company->update($data);
 
         return redirect()
-            ->route('empresa.edit')
+            ->route('empresas.edit', $company)
             ->with('success', 'Dados da empresa atualizados com sucesso.');
     }
 

@@ -20,16 +20,16 @@ description: Fluxo de pedidos com API Octalog (envio, status, etiqueta, SAC e co
 | Cliente API | `app/Services/OctalogService.php` — auth com cache, retry em 401, limite de 50 pedidos por envio |
 | DTO de payload | `app/DTOs/OctalogOrderData.php` |
 | Exceção | `app/Exceptions/OctalogException.php` |
-| Consulta por número | `app/Http/Controllers/PedidoConsultaOctalogController.php` — rotas `pedidos.consulta-octalog.*` |
+| Consulta por número | `PedidoConsultaOctalogController` — rotas `empresas.consulta_octalog.*` (escopo `{company}`) |
 | SAC (ticket / webhook UI) | `PedidoSacTicketController`, `OctalogSacWebhookConfigController`, `OctalogSacService` |
 | Webhook inbound | `routes/api.php` → `OctalogWebhookController`, `OctalogInboundWebhookProcessor` |
 | Model | `app/Models/Pedido.php` — status, resposta, rótulo de atividade |
 
 ## Rotas web relevantes (`routes/web.php`)
 
-- `pedidos` — resource parcial (`index`, `create`, `store`, `show`).
-- `pedidos.consulta-octalog.create` / `store` — consulta em lote na API.
-- `pedidos.sac.ticket.*` — abertura/cancelamento de ticket.
+- `empresas.pedidos.*` — `index`, `create`, `store`, `show` aninhadas em `{company}`.
+- `empresas.consulta_octalog.*` — consulta em lote na API só para pedidos da empresa.
+- `empresas.pedidos.sac.ticket.*` — abertura/cancelamento de ticket.
 - `octalog.sac.webhook.*` — configurar/consultar webhook SAC.
 
 ## Ao implementar ou alterar o fluxo de criação

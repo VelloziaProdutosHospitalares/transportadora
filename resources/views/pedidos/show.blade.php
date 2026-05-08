@@ -3,7 +3,7 @@
 @section('title', 'Pedido '.$pedido->numero_formatado.' — '.config('app.name'))
 
 @section('content')
-    <x-page-header title="Pedido {{ $pedido->numero_formatado }}" :back-href="route('pedidos.index')" back-label="Voltar para pedidos">
+    <x-page-header title="Pedido {{ $pedido->numero_formatado }} — {{ $company->trade_name }}" :back-href="route('empresas.pedidos.index', $company)" back-label="Voltar para pedidos">
         <x-slot name="description">
             <p class="flex flex-wrap items-center gap-2">
                 <span>Status:</span>
@@ -23,7 +23,7 @@
             <strong class="font-semibold">Erro no envio à Octalog</strong>
             <p class="mt-1 whitespace-pre-wrap break-words">{{ $pedido->erro_mensagem }}</p>
             <p class="mt-3 text-xs opacity-90">
-                Corrija os dados e crie um novo pedido a partir da tela <a href="{{ route('pedidos.create') }}">Novo pedido</a>.
+                Corrija os dados e crie um novo pedido a partir da tela <a href="{{ route('empresas.pedidos.create', $company) }}">Novo pedido</a>.
             </p>
         </x-alert>
     @endif
@@ -97,12 +97,12 @@
                         </span>
                     @else
                         <span class="inline-flex rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">Etiqueta Octalog não marcada como impressa</span>
-                        <form method="POST" action="{{ route('etiquetas.mark-printed', $octalogShippingLabel) }}" class="inline">
+                        <form method="POST" action="{{ route('empresas.etiquetas.mark-printed', [$company, $octalogShippingLabel]) }}" class="inline">
                             @csrf
                             <x-button type="submit" variant="secondary" class="text-xs">Marcar PDF Octalog como impressa</x-button>
                         </form>
                     @endif
-                    <a href="{{ route('etiquetas.index') }}" class="ml-auto text-xs font-medium text-primary hover:underline">Ver todas as etiquetas</a>
+                    <a href="{{ route('empresas.etiquetas.index', $company) }}" class="ml-auto text-xs font-medium text-primary hover:underline">Ver todas as etiquetas</a>
                 </div>
             @endif
 
@@ -123,10 +123,10 @@
         <h2 id="sac-heading" class="mb-4 text-lg font-semibold text-gray-900">SAC Octalog</h2>
         @if ($pedido->status === 'enviado')
             <div class="flex flex-wrap gap-3">
-                <x-button href="{{ route('pedidos.sac.ticket.create', $pedido) }}">
+                <x-button href="{{ route('empresas.pedidos.sac.ticket.create', [$company, $pedido]) }}">
                     Abrir ticket
                 </x-button>
-                <x-button variant="secondary" href="{{ route('pedidos.sac.ticket.cancel.create', $pedido) }}">
+                <x-button variant="secondary" href="{{ route('empresas.pedidos.sac.ticket.cancel.create', [$company, $pedido]) }}">
                     Cancelar ticket
                 </x-button>
             </div>

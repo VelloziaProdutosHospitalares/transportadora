@@ -22,24 +22,29 @@ class PedidoController extends Controller
         private readonly OctalogService $octalogService,
     ) {}
 
-    public function index(): View
+    public function index(Company $company): View
     {
-        $pedidos = Pedido::query()->latest()->paginate(15)->withQueryString();
+        $pedidos = Pedido::query()
+            ->where('company_id', $company->id)
+            ->latest()
+            ->paginate(15)
+            ->withQueryString();
 
-        return view('pedidos.index', compact('pedidos'));
+        return view('pedidos.index', compact('company', 'pedidos'));
     }
 
-    public function create(): View
+    public function create(Company $company): View
     {
-        return view('pedidos.create');
+        return view('pedidos.create', compact('company'));
     }
 
-    public function store(StorePedidoRequest $request): RedirectResponse
+    public function store(Company $company, StorePedidoRequest $request): RedirectResponse
     {
         $validated = $request->validated();
 
-        $pedido = DB::transaction(function () use ($validated) {
+        $pedido = DB::transaction(function () use ($validated, $company) {
             $record = Pedido::query()->create([
+                'company_id' => $company->id,
                 'numero_pedido' => 'PED-TEMP-'.Str::uuid()->toString(),
                 'chave_nf' => $validated['chave_nf'] ?? null,
                 'numero_nf' => $validated['numero_nf'],
@@ -84,9 +89,7 @@ class PedidoController extends Controller
             'Email' => $emailDest,
         ];
 
-        $company = Company::query()->first();
-
-        $remetente = $company !== null ? [
+        $remetente = [
             'RazaoSocial' => $company->legal_name,
             'CNPJ' => preg_replace('/\D+/', '', (string) $company->cnpj),
             'InscricaoEstadual' => $company->state_registration,
@@ -98,7 +101,7 @@ class PedidoController extends Controller
             'UF' => strtoupper((string) $company->state),
             'Telefone' => $company->phone,
             'Email' => $company->email,
-        ] : null;
+        ];
 
         $orderData = new OctalogOrderData(
             pedido: $pedido->numero_pedido,
@@ -125,7 +128,7 @@ class PedidoController extends Controller
             ]);
 
             return redirect()
-                ->route('pedidos.create')
+                ->route('empresas.pedidos.create', $company)
                 ->with('error', 'Não foi possível enviar o pedido à Octalog. '.$safeMessage);
         }
 
@@ -173,7 +176,7 @@ class PedidoController extends Controller
             }
 
             return redirect()
-                ->route('pedidos.show', $pedido)
+                ->route('empresas.pedidos.show', [$company, $pedido])
                 ->with('success', 'Pedido enviado com sucesso!');
         }
 
@@ -190,11 +193,11 @@ class PedidoController extends Controller
             : $erroDetalhe;
 
         return redirect()
-            ->route('pedidos.create')
+            ->route('empresas.pedidos.create', $company)
             ->with('error', 'A Octalog não aceitou o pedido. '.$flashErro);
     }
 
-    public function show(Pedido $pedido): View
+    public function show(Company $company, Pedido $pedido): View
     {
         if ($pedido->url_etiqueta) {
             ShippingLabel::query()->updateOrCreate(
@@ -203,7 +206,7 @@ class PedidoController extends Controller
             );
         }
 
-        $company = Company::query()->first();
+        $shippingCompany = $pedido->company;
         $octalogShippingLabel = $pedido->shippingLabels()
             ->where('source', ShippingLabel::SOURCE_OCTALOG)
             ->first();
@@ -222,8 +225,8 @@ class PedidoController extends Controller
         }
 
         return view('pedidos.show', [
+            'company' => $shippingCompany ?? $company,
             'pedido' => $pedido,
-            'company' => $company,
             'labelData' => $labelData,
             'barcodeSvg' => $barcodeSvg,
             'qrCodeSvg' => $qrCodeSvg,

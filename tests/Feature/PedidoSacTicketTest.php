@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Company;
 use App\Models\Pedido;
 use App\Services\OctalogService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,9 +27,29 @@ class PedidoSacTicketTest extends TestCase
         ]);
     }
 
-    private function pedidoEnviado(): Pedido
+    private function empresa(): Company
     {
+        return Company::query()->create([
+            'legal_name' => 'Empresa Teste LTDA',
+            'trade_name' => 'Empresa Teste',
+            'cnpj' => '11222333000181',
+            'phone' => '(11) 99999-9999',
+            'email' => 'contato@empresa.com',
+            'postal_code' => '01310-100',
+            'street' => 'Av. Paulista',
+            'number' => '1000',
+            'district' => 'Bela Vista',
+            'city' => 'São Paulo',
+            'state' => 'SP',
+        ]);
+    }
+
+    private function pedidoEnviado(?Company $company = null): Pedido
+    {
+        $company = $company ?? $this->empresa();
+
         return Pedido::query()->create([
+            'company_id' => $company->id,
             'numero_pedido' => 'PED-SAC-WEB-1',
             'numero_nf' => '55',
             'serie_nf' => '1',
@@ -49,9 +70,10 @@ class PedidoSacTicketTest extends TestCase
             ], 200),
         ]);
 
-        $pedido = $this->pedidoEnviado();
+        $company = $this->empresa();
+        $pedido = $this->pedidoEnviado($company);
 
-        $this->get(route('pedidos.sac.ticket.create', $pedido))
+        $this->get(route('empresas.pedidos.sac.ticket.create', [$company, $pedido]))
             ->assertOk()
             ->assertSee('Reclamação', false);
     }
@@ -67,16 +89,17 @@ class PedidoSacTicketTest extends TestCase
             ], 200),
         ]);
 
-        $pedido = $this->pedidoEnviado();
+        $company = $this->empresa();
+        $pedido = $this->pedidoEnviado($company);
 
-        $response = $this->post(route('pedidos.sac.ticket.store', $pedido), [
+        $response = $this->post(route('empresas.pedidos.sac.ticket.store', [$company, $pedido]), [
             'id_motivo' => 3,
             'titulo' => 'Problema na entrega',
             'descricao' => 'Detalhes do ocorrido.',
             'comentario_motorista' => '',
         ]);
 
-        $response->assertRedirect(route('pedidos.show', $pedido));
+        $response->assertRedirect(route('empresas.pedidos.show', [$company, $pedido]));
         $response->assertSessionHas('success');
 
         Http::assertSent(function ($request) use ($pedido) {
@@ -94,9 +117,10 @@ class PedidoSacTicketTest extends TestCase
     #[Test]
     public function store_falha_validacao_sem_titulo(): void
     {
-        $pedido = $this->pedidoEnviado();
+        $company = $this->empresa();
+        $pedido = $this->pedidoEnviado($company);
 
-        $response = $this->post(route('pedidos.sac.ticket.store', $pedido), [
+        $response = $this->post(route('empresas.pedidos.sac.ticket.store', [$company, $pedido]), [
             'id_motivo' => 3,
             'descricao' => 'Só descrição',
         ]);
@@ -107,7 +131,10 @@ class PedidoSacTicketTest extends TestCase
     #[Test]
     public function pendente_nao_acessa_formulario_ticket(): void
     {
+        $company = $this->empresa();
+
         $pedido = Pedido::query()->create([
+            'company_id' => $company->id,
             'numero_pedido' => 'PED-PEND',
             'numero_nf' => '1',
             'serie_nf' => '1',
@@ -117,7 +144,7 @@ class PedidoSacTicketTest extends TestCase
             'status' => 'pendente',
         ]);
 
-        $this->get(route('pedidos.sac.ticket.create', $pedido))
-            ->assertRedirect(route('pedidos.show', $pedido));
+        $this->get(route('empresas.pedidos.sac.ticket.create', [$company, $pedido]))
+            ->assertRedirect(route('empresas.pedidos.show', [$company, $pedido]));
     }
 }

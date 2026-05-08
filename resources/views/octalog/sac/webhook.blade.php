@@ -3,7 +3,7 @@
 @section('title', 'Webhook SAC Octalog — '.config('app.name'))
 
 @section('content')
-    <x-page-header title="Configuração do webhook (Octalog SAC)" :back-href="route('pedidos.index')" back-label="Pedidos">
+    <x-page-header title="Configuração do webhook (Octalog SAC)" :back-href="route('empresas.index')" back-label="Empresas">
         <x-slot name="description">
             <div class="max-w-3xl space-y-2 text-sm leading-relaxed text-gray-600">
                 <p>

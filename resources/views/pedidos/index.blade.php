@@ -3,19 +3,22 @@
 @section('title', 'Pedidos — '.config('app.name'))
 
 @section('content')
-    <x-page-header title="Pedidos">
+    <x-page-header title="Pedidos — {{ $company->trade_name }}">
         <x-slot name="description">
             <p>
-                Acompanhe envios à Octalog, status e etiquetas. Para incluir uma nota, use
+                Acompanhe envios à Octalog, status e etiquetas desta empresa. Para incluir uma nota, use
                 <span class="font-medium text-gray-800">Novo pedido</span>.
             </p>
         </x-slot>
         <x-slot name="actions">
             <div class="flex w-full flex-wrap gap-2 sm:w-auto sm:justify-end">
-                <x-button variant="secondary" href="{{ route('pedidos.consulta-octalog.create') }}">
+                <x-button variant="secondary" href="{{ route('empresas.consulta_octalog.create', $company) }}">
                     Consultar status Octalog
                 </x-button>
-                <x-button href="{{ route('pedidos.create') }}">
+                <x-button variant="ghost" href="{{ route('empresas.index') }}">
+                    Voltar às empresas
+                </x-button>
+                <x-button href="{{ route('empresas.pedidos.create', $company) }}">
                     Novo pedido
                 </x-button>
             </div>
@@ -65,7 +68,7 @@
                             <td class="whitespace-nowrap px-4 py-3 text-gray-600">{{ $pedido->created_at?->format('d/m/Y H:i') }}</td>
                             <td class="whitespace-nowrap px-4 py-3 text-right">
                                 <a
-                                    href="{{ route('pedidos.show', $pedido) }}"
+                                    href="{{ route('empresas.pedidos.show', [$company, $pedido]) }}"
                                     class="rounded-sm font-medium text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                                 >
                                     Ver / etiqueta
@@ -78,7 +81,7 @@
                                 <p class="text-sm font-medium text-gray-900">Nenhum pedido ainda</p>
                                 <p class="mt-1 text-sm text-gray-600">Crie o primeiro pedido informando a NF-e e o destinatário.</p>
                                 <div class="mt-5 flex justify-center">
-                                    <x-button href="{{ route('pedidos.create') }}">
+                                    <x-button href="{{ route('empresas.pedidos.create', $company) }}">
                                         Novo pedido
                                     </x-button>
                                 </div>

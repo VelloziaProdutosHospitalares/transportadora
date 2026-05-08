@@ -21,7 +21,7 @@ class UpdateCompanyRequest extends FormRequest
         return [
             'legal_name' => ['required', 'string', 'max:255'],
             'trade_name' => ['required', 'string', 'max:255'],
-            'cnpj' => ['required', 'string', 'max:18', function (string $attribute, mixed $value, \Closure $fail): void {
+            'cnpj' => ['required', 'string', 'max:18', Rule::unique('companies', 'cnpj')->ignore($this->route('company')), function (string $attribute, mixed $value, \Closure $fail): void {
                 if (! $this->isValidCnpj((string) $value)) {
                     $fail('O CNPJ informado é inválido.');
                 }

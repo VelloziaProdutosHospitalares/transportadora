@@ -3,7 +3,7 @@
 @section('title', 'Cancelar ticket SAC — '.config('app.name'))
 
 @section('content')
-    <x-page-header title="Cancelar ticket (Octalog)" :back-href="route('pedidos.show', $pedido)" :back-label="'Pedido '.$pedido->numero_formatado">
+    <x-page-header title="Cancelar ticket (Octalog)" :back-href="route('empresas.pedidos.show', [$company, $pedido])" :back-label="'Pedido '.$pedido->numero_formatado">
         <x-slot name="description">
             <p>
                 Apenas chamados abertos pela API e não finalizados. Motivo &quot;Pedido Cancelado&quot; não pode ser cancelado pela API.
@@ -11,7 +11,7 @@
         </x-slot>
     </x-page-header>
 
-    <form method="post" action="{{ route('pedidos.sac.ticket.cancel', $pedido) }}" class="mx-auto max-w-2xl space-y-6">
+    <form method="post" action="{{ route('empresas.pedidos.sac.ticket.cancel', [$company, $pedido]) }}" class="mx-auto max-w-2xl space-y-6">
         @csrf
         @method('DELETE')
         <x-card>
@@ -33,7 +33,7 @@
                 <x-button variant="danger" type="submit">
                     Enviar cancelamento
                 </x-button>
-                <x-button variant="ghost" href="{{ route('pedidos.show', $pedido) }}">
+                <x-button variant="ghost" href="{{ route('empresas.pedidos.show', [$company, $pedido]) }}">
                     Voltar
                 </x-button>
             </div>

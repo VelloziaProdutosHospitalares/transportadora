@@ -29,7 +29,7 @@
     <header class="mb-2 border-b border-black pb-2 text-center">
         @if ($company?->logo_path)
             <img
-                src="{{ route('empresa.logo') }}"
+                src="{{ route('empresas.logo', $company) }}"
                 alt=""
                 class="mx-auto block max-h-14 max-w-[85%] object-contain"
             />

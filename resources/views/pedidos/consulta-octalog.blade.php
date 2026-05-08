@@ -3,13 +3,12 @@
 @section('title', 'Consulta de pedidos — '.config('app.name'))
 
 @section('content')
-    <x-page-header title="Consultar status na Octalog" :back-href="route('pedidos.index')" back-label="Voltar para pedidos">
+    <x-page-header title="Consultar status na Octalog — {{ $company->trade_name }}" :back-href="route('empresas.pedidos.index', $company)" back-label="Voltar para pedidos">
         <x-slot name="description">
             <p>
-                Envie os <strong class="font-medium text-gray-800">números dos pedidos</strong> (como aparecem no sistema, por exemplo
-                <code class="rounded bg-gray-100 px-1 py-0.5 text-xs font-mono text-gray-800">PED-20260429-00001</code>).
-                Consulta até <strong class="font-medium text-gray-800">100</strong> pedidos por requisição — é o mesmo contrato da API
-                <span class="font-mono text-xs text-gray-500">POST /pedido/listar</span>.
+                Somente números de pedido cadastrados para <strong class="font-medium text-gray-900">{{ $company->trade_name }}</strong> são considerados nesta empresa.
+                Consulta até <strong class="font-medium text-gray-800">100</strong> pedidos por requisição (contrato
+                <span class="font-mono text-xs text-gray-500">POST /pedido/listar</span>).
             </p>
         </x-slot>
     </x-page-header>
@@ -24,7 +23,7 @@
         </x-alert>
     @endif
 
-    <form method="POST" action="{{ route('pedidos.consulta-octalog.store') }}" class="mb-10 space-y-4">
+    <form method="POST" action="{{ route('empresas.consulta_octalog.store', $company) }}" class="mb-10 space-y-4">
         @csrf
         <div>
             <label for="lista_pedidos" class="mb-1 block text-sm font-medium text-gray-800">Lista de números de pedido</label>
@@ -48,6 +47,19 @@
 
     @isset($listaPedidosConsultados)
         @if (! empty($resultados))
+            @if (! empty($mensagemNumerosIgnorados))
+                <x-alert variant="error" class="mb-6">
+                    <p>{{ $mensagemNumerosIgnorados }}</p>
+                    @if (! empty($listaNumerosIgnorados))
+                        <ul class="mt-2 list-inside list-disc text-sm">
+                            @foreach ($listaNumerosIgnorados as $n)
+                                <li class="font-mono">{{ $n }}</li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </x-alert>
+            @endif
+
             @isset($mensagemAtualizacao)
                 <x-alert variant="success" class="mb-6">{{ $mensagemAtualizacao }}</x-alert>
             @endisset

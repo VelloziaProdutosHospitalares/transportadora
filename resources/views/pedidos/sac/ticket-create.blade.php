@@ -3,13 +3,13 @@
 @section('title', 'Abrir ticket SAC — '.config('app.name'))
 
 @section('content')
-    <x-page-header title="Abrir ticket na Octalog" :back-href="route('pedidos.show', $pedido)" :back-label="'Pedido '.$pedido->numero_formatado">
+    <x-page-header title="Abrir ticket na Octalog" :back-href="route('empresas.pedidos.show', [$company, $pedido])" :back-label="'Pedido '.$pedido->numero_formatado">
         <x-slot name="description">
             <p>Pedido <strong class="font-medium text-gray-800">{{ $pedido->numero_formatado }}</strong></p>
         </x-slot>
     </x-page-header>
 
-    <form method="post" action="{{ route('pedidos.sac.ticket.store', $pedido) }}" class="mx-auto max-w-2xl space-y-6">
+    <form method="post" action="{{ route('empresas.pedidos.sac.ticket.store', [$company, $pedido]) }}" class="mx-auto max-w-2xl space-y-6">
         @csrf
         <x-card>
             <div>
@@ -55,7 +55,7 @@
                 <x-button type="submit">
                     Enviar à Octalog
                 </x-button>
-                <x-button variant="ghost" href="{{ route('pedidos.show', $pedido) }}">
+                <x-button variant="ghost" href="{{ route('empresas.pedidos.show', [$company, $pedido]) }}">
                     Cancelar
                 </x-button>
             </div>

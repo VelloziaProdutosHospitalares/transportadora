@@ -13,17 +13,36 @@ class ShippingLabelFeatureTest extends TestCase
 {
     use RefreshDatabase;
 
+    private function empresa(): Company
+    {
+        return Company::query()->create([
+            'legal_name' => 'Empresa Teste LTDA',
+            'trade_name' => 'Empresa Teste',
+            'cnpj' => '11222333000181',
+            'phone' => '(11) 99999-9999',
+            'email' => 'contato@empresa.com',
+            'postal_code' => '01310-100',
+            'street' => 'Av. Paulista',
+            'number' => '1000',
+            'district' => 'Bela Vista',
+            'city' => 'São Paulo',
+            'state' => 'SP',
+        ]);
+    }
+
     public function test_listagem_de_etiquetas_e_exibida(): void
     {
-        $response = $this->get(route('etiquetas.index'));
+        $company = $this->empresa();
+
+        $response = $this->get(route('empresas.etiquetas.index', $company));
 
         $response->assertOk();
-        $response->assertSee('Etiquetas geradas');
+        $response->assertSee('Etiquetas — Empresa Teste', false);
     }
 
     public function test_salva_dados_da_empresa(): void
     {
-        $response = $this->post(route('empresa.store'), [
+        $response = $this->post(route('empresas.store'), [
             'legal_name' => 'Linktec Internet Piauí LTDA',
             'trade_name' => 'Linktec',
             'cnpj' => '11222333000181',
@@ -40,7 +59,9 @@ class ShippingLabelFeatureTest extends TestCase
         ]);
 
         $response->assertStatus(302);
-        $response->assertRedirectToRoute('empresa.edit');
+        $company = Company::query()->first();
+        $this->assertNotNull($company);
+        $response->assertRedirect(route('empresas.edit', $company));
         $response->assertSessionHas('success');
         $this->assertDatabaseHas('companies', [
             'trade_name' => 'Linktec',
@@ -50,7 +71,7 @@ class ShippingLabelFeatureTest extends TestCase
 
     public function test_validacao_falha_com_cnpj_invalido(): void
     {
-        $response = $this->post(route('empresa.store'), [
+        $response = $this->post(route('empresas.store'), [
             'legal_name' => 'Empresa Teste LTDA',
             'trade_name' => 'Empresa Teste',
             'cnpj' => '11111111111111',
@@ -70,21 +91,10 @@ class ShippingLabelFeatureTest extends TestCase
 
     public function test_pedido_enviado_exibe_etiqueta_termica_na_tela(): void
     {
-        Company::query()->create([
-            'legal_name' => 'Empresa Teste LTDA',
-            'trade_name' => 'Empresa Teste',
-            'cnpj' => '11222333000181',
-            'phone' => '(11) 99999-9999',
-            'email' => 'contato@empresa.com',
-            'postal_code' => '01310-100',
-            'street' => 'Av. Paulista',
-            'number' => '1000',
-            'district' => 'Bela Vista',
-            'city' => 'São Paulo',
-            'state' => 'SP',
-        ]);
+        $company = $this->empresa();
 
         $pedido = Pedido::query()->create([
+            'company_id' => $company->id,
             'numero_pedido' => 'PED-20260429-99999',
             'numero_nf' => '1',
             'serie_nf' => '1',
@@ -112,7 +122,7 @@ class ShippingLabelFeatureTest extends TestCase
             ],
         ]);
 
-        $response = $this->get(route('pedidos.show', $pedido));
+        $response = $this->get(route('empresas.pedidos.show', [$company, $pedido]));
 
         $response->assertOk();
         $response->assertSee('CLIENTE TESTE', false);
@@ -122,7 +132,10 @@ class ShippingLabelFeatureTest extends TestCase
 
     public function test_marcar_impressa_atualiza_registro(): void
     {
+        $company = $this->empresa();
+
         $pedido = Pedido::query()->create([
+            'company_id' => $company->id,
             'numero_pedido' => 'PED-MARK-1',
             'numero_nf' => '1',
             'serie_nf' => '1',
@@ -138,7 +151,7 @@ class ShippingLabelFeatureTest extends TestCase
             'external_url' => 'https://exemplo.test/etiq.pdf',
         ]);
 
-        $this->post(route('etiquetas.mark-printed', $label))
+        $this->post(route('empresas.etiquetas.mark-printed', [$company, $label]))
             ->assertRedirect();
 
         $label->refresh();
@@ -152,7 +165,7 @@ class ShippingLabelFeatureTest extends TestCase
         $path = 'company-logos/logo.png';
         Storage::disk('public')->put($path, 'fake-image');
 
-        Company::query()->create([
+        $company = Company::query()->create([
             'legal_name' => 'Vellozia Produtos Hospitalares LTDA',
             'trade_name' => 'Vellozia Produtos Hospitalares',
             'cnpj' => '11222333000181',
@@ -167,7 +180,7 @@ class ShippingLabelFeatureTest extends TestCase
             'logo_path' => $path,
         ]);
 
-        $this->get(route('empresa.logo'))
+        $this->get(route('empresas.logo', $company))
             ->assertOk();
     }
 }

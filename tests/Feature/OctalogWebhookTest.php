@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Company;
 use App\Models\Pedido;
 use App\Services\OctalogInboundWebhookProcessor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,6 +13,23 @@ use Tests\TestCase;
 class OctalogWebhookTest extends TestCase
 {
     use RefreshDatabase;
+
+    private function empresa(): Company
+    {
+        return Company::query()->create([
+            'legal_name' => 'Empresa Octalog Webhook LTDA',
+            'trade_name' => 'Empresa Octalog Webhook',
+            'cnpj' => '11222333000181',
+            'phone' => '(11) 99999-9999',
+            'email' => 'webhook@exemplo.invalid',
+            'postal_code' => '01310-100',
+            'street' => 'Av. Paulista',
+            'number' => '1000',
+            'district' => 'Bela Vista',
+            'city' => 'São Paulo',
+            'state' => 'SP',
+        ]);
+    }
 
     private function exemploPayloadLista(): array
     {
@@ -91,7 +109,10 @@ class OctalogWebhookTest extends TestCase
     #[Test]
     public function aceita_payload_sac_ticket_e_anexa_ao_pedido(): void
     {
+        $company = $this->empresa();
+
         $pedido = Pedido::query()->create([
+            'company_id' => $company->id,
             'numero_pedido' => 'PED-SAC-001',
             'numero_nf' => '123',
             'serie_nf' => '1',
@@ -136,7 +157,10 @@ class OctalogWebhookTest extends TestCase
     #[Test]
     public function aceita_lote_misto_tracking_e_sac(): void
     {
+        $company = $this->empresa();
+
         Pedido::query()->create([
+            'company_id' => $company->id,
             'numero_pedido' => 'PED-MIX-A',
             'numero_nf' => '1',
             'serie_nf' => '1',
@@ -146,6 +170,7 @@ class OctalogWebhookTest extends TestCase
             'status' => 'enviado',
         ]);
         Pedido::query()->create([
+            'company_id' => $company->id,
             'numero_pedido' => 'PED-MIX-B',
             'numero_nf' => '2',
             'serie_nf' => '1',

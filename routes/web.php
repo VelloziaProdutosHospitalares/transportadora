@@ -7,30 +7,84 @@ use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\PedidoSacTicketController;
 use App\Http\Controllers\SerproNfeConsultaController;
 use App\Http\Controllers\ShippingLabelController;
+use App\Models\Pedido;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return redirect()->route('pedidos.index');
+    return redirect()->route('empresas.index');
 });
+
+Route::permanentRedirect('empresa', '/empresas');
+Route::redirect('empresa/logo', '/empresas');
 
 Route::post('pedidos/consulta-nfe-serpro', SerproNfeConsultaController::class)
     ->name('pedidos.consulta-nfe-serpro');
 
-Route::get('pedidos/consulta-octalog', [PedidoConsultaOctalogController::class, 'create'])
-    ->name('pedidos.consulta-octalog.create');
-Route::post('pedidos/consulta-octalog', [PedidoConsultaOctalogController::class, 'store'])
-    ->name('pedidos.consulta-octalog.store');
+Route::redirect('/pedidos', '/empresas');
+Route::redirect('/pedidos/create', '/empresas');
+Route::redirect('/pedidos/consulta-octalog', '/empresas');
 
-Route::resource('pedidos', PedidoController::class)->only(['index', 'create', 'store', 'show']);
+Route::get('/pedidos/{pedido}', function (Pedido $pedido) {
+    return redirect()->route('empresas.pedidos.show', [$pedido->company, $pedido]);
+})->name('legacy.pedidos.show');
 
-Route::get('empresa', [CompanyController::class, 'edit'])->name('empresa.edit');
-Route::get('empresa/logo', [CompanyController::class, 'showLogo'])->name('empresa.logo');
-Route::post('empresa', [CompanyController::class, 'store'])->name('empresa.store');
-Route::put('empresa', [CompanyController::class, 'update'])->name('empresa.update');
+Route::get('/pedidos/{pedido}/sac/ticket/create', function (Pedido $pedido) {
+    return redirect()->route('empresas.pedidos.sac.ticket.create', [$pedido->company, $pedido]);
+});
 
-Route::get('etiquetas', [ShippingLabelController::class, 'index'])->name('etiquetas.index');
-Route::post('etiquetas/{shippingLabel}/marcar-impressa', [ShippingLabelController::class, 'markPrinted'])
-    ->name('etiquetas.mark-printed');
+Route::get('/pedidos/{pedido}/sac/ticket/cancel', function (Pedido $pedido) {
+    return redirect()->route('empresas.pedidos.sac.ticket.cancel.create', [$pedido->company, $pedido]);
+});
+
+Route::redirect('/etiquetas', '/empresas');
+
+Route::prefix('empresas')->group(function () {
+    Route::get('/', [CompanyController::class, 'index'])->name('empresas.index');
+    Route::get('/criar', [CompanyController::class, 'create'])->name('empresas.create');
+    Route::post('/', [CompanyController::class, 'store'])->name('empresas.store');
+
+    Route::prefix('{company}')
+        ->name('empresas.')
+        ->scopeBindings()
+        ->group(function () {
+            Route::get('editar', [CompanyController::class, 'edit'])->name('edit');
+            Route::put('/', [CompanyController::class, 'update'])->name('update');
+            Route::get('logo', [CompanyController::class, 'showLogo'])->name('logo');
+
+            Route::get('consulta-octalog', [PedidoConsultaOctalogController::class, 'create'])
+                ->name('consulta_octalog.create');
+            Route::post('consulta-octalog', [PedidoConsultaOctalogController::class, 'store'])
+                ->name('consulta_octalog.store');
+
+            Route::get('pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
+            Route::get('pedidos/criar', [PedidoController::class, 'create'])->name('pedidos.create');
+            Route::post('pedidos', [PedidoController::class, 'store'])->name('pedidos.store');
+            Route::get('pedidos/{pedido}', [PedidoController::class, 'show'])->name('pedidos.show');
+
+            Route::get('etiquetas', [ShippingLabelController::class, 'index'])->name('etiquetas.index');
+            Route::post(
+                'etiquetas/{shippingLabel}/marcar-impressa',
+                [ShippingLabelController::class, 'markPrinted'],
+            )->name('etiquetas.mark-printed');
+
+            Route::get(
+                'pedidos/{pedido}/sac/ticket/criar',
+                [PedidoSacTicketController::class, 'create'],
+            )->name('pedidos.sac.ticket.create');
+            Route::post(
+                'pedidos/{pedido}/sac/ticket',
+                [PedidoSacTicketController::class, 'store'],
+            )->name('pedidos.sac.ticket.store');
+            Route::get(
+                'pedidos/{pedido}/sac/ticket/cancelar',
+                [PedidoSacTicketController::class, 'cancelCreate'],
+            )->name('pedidos.sac.ticket.cancel.create');
+            Route::delete(
+                'pedidos/{pedido}/sac/ticket',
+                [PedidoSacTicketController::class, 'cancel'],
+            )->name('pedidos.sac.ticket.cancel');
+        });
+});
 
 Route::get('octalog/sac/webhook', [OctalogSacWebhookConfigController::class, 'index'])
     ->name('octalog.sac.webhook.index');
@@ -38,12 +92,3 @@ Route::post('octalog/sac/webhook', [OctalogSacWebhookConfigController::class, 'u
     ->name('octalog.sac.webhook.update');
 Route::post('octalog/sac/webhook/consultar', [OctalogSacWebhookConfigController::class, 'consultar'])
     ->name('octalog.sac.webhook.consultar');
-
-Route::get('pedidos/{pedido}/sac/ticket/create', [PedidoSacTicketController::class, 'create'])
-    ->name('pedidos.sac.ticket.create');
-Route::post('pedidos/{pedido}/sac/ticket', [PedidoSacTicketController::class, 'store'])
-    ->name('pedidos.sac.ticket.store');
-Route::get('pedidos/{pedido}/sac/ticket/cancel', [PedidoSacTicketController::class, 'cancelCreate'])
-    ->name('pedidos.sac.ticket.cancel.create');
-Route::delete('pedidos/{pedido}/sac/ticket', [PedidoSacTicketController::class, 'cancel'])
-    ->name('pedidos.sac.ticket.cancel');

@@ -3,7 +3,7 @@
 @section('title', 'Novo pedido — '.config('app.name'))
 
 @section('content')
-    <x-page-header title="Novo pedido" :back-href="route('pedidos.index')" back-label="Voltar para pedidos">
+    <x-page-header title="Novo pedido — {{ $company->trade_name }}" :back-href="route('empresas.pedidos.index', $company)" back-label="Voltar para pedidos">
         <x-slot name="description">
             <p>
                 Fluxo sugerido:
@@ -15,7 +15,7 @@
         </x-slot>
     </x-page-header>
 
-    <form id="form-novo-pedido" method="POST" action="{{ route('pedidos.store') }}" class="space-y-8" novalidate>
+    <form id="form-novo-pedido" method="POST" action="{{ route('empresas.pedidos.store', $company) }}" class="space-y-8" novalidate>
         @csrf
 
         <x-card variant="highlight" aria-labelledby="secao-nota-heading">

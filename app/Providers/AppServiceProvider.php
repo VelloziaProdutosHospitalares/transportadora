@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Company;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +21,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        View::composer('layouts.app', static function (\Illuminate\Contracts\View\View $view): void {
+            $route = request()->route();
+            $company = $route?->parameter('company');
+            $view->with('navCompany', $company instanceof Company ? $company : null);
+        });
     }
 }

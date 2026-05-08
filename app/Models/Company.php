@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Company extends Model
 {
@@ -22,4 +23,9 @@ class Company extends Model
         'state',
         'logo_path',
     ];
+
+    public function pedidos(): HasMany
+    {
+        return $this->hasMany(Pedido::class);
+    }
 }

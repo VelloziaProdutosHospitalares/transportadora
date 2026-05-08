@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\OctalogException;
 use App\Http\Requests\ConsultarPedidosOctalogRequest;
+use App\Models\Company;
 use App\Models\Pedido;
 use App\Services\OctalogService;
 use App\Support\OctalogStatusAtividade;
@@ -17,20 +18,41 @@ class PedidoConsultaOctalogController extends Controller
         private readonly OctalogService $octalogService,
     ) {}
 
-    public function create(): View
+    public function create(Company $company): View
     {
-        return view('pedidos.consulta-octalog');
+        return view('pedidos.consulta-octalog', compact('company'));
     }
 
-    public function store(ConsultarPedidosOctalogRequest $request): RedirectResponse|View
+    public function store(ConsultarPedidosOctalogRequest $request, Company $company): RedirectResponse|View
     {
-        $numeros = $request->validated()['numeros'];
+        $numerosInformados = $request->validated()['numeros'];
+
+        /** @var list<string> $permitidos */
+        $permitidos = Pedido::query()
+            ->where('company_id', $company->id)
+            ->whereIn('numero_pedido', $numerosInformados)
+            ->pluck('numero_pedido')
+            ->all();
+
+        /** @var array<string, bool> $map */
+        $map = array_flip($permitidos);
+        /** @var list<string> $numeros */
+        $numeros = array_values(array_filter($numerosInformados, static fn (string $n): bool => isset($map[$n])));
+
+        if ($numeros === []) {
+            return redirect()
+                ->route('empresas.consulta_octalog.create', $company)
+                ->withInput($request->only('lista_pedidos'))
+                ->with('error', 'Nenhum número informado pertence a esta empresa.');
+        }
+
+        $ignorados = array_diff($numerosInformados, $numeros);
 
         try {
             $result = $this->octalogService->listOrders($numeros);
         } catch (OctalogException $e) {
             return redirect()
-                ->route('pedidos.consulta-octalog.create')
+                ->route('empresas.consulta_octalog.create', $company)
                 ->withInput($request->only('lista_pedidos'))
                 ->with('error', 'Não foi possível consultar os pedidos na Octalog. '.$e->getMessage());
         }
@@ -39,14 +61,18 @@ class PedidoConsultaOctalogController extends Controller
             $detalhe = $this->formatOctalogErrors($result['errors'] ?? []);
 
             return redirect()
-                ->route('pedidos.consulta-octalog.create')
+                ->route('empresas.consulta_octalog.create', $company)
                 ->withInput($request->only('lista_pedidos'))
                 ->with('error', 'A consulta não retornou dados. '.$detalhe);
         }
 
         $data = is_array($result['data']) ? $result['data'] : [];
 
-        $pedidosDb = Pedido::whereIn('numero_pedido', $numeros)->get()->keyBy('numero_pedido');
+        $pedidosDb = Pedido::query()
+            ->where('company_id', $company->id)
+            ->whereIn('numero_pedido', $numeros)
+            ->get()
+            ->keyBy('numero_pedido');
 
         $linhas = [];
         $totalAtualizados = 0;
@@ -111,10 +137,19 @@ class PedidoConsultaOctalogController extends Controller
             default => null,
         };
 
+        $mensagemNumerosIgnorados = match (count($ignorados)) {
+            0 => null,
+            1 => 'Um número ignorado por não pertencer a esta empresa: '.reset($ignorados).'.',
+            default => sprintf('%d números foram ignorados por não pertencerem a esta empresa.', count($ignorados)),
+        };
+
         return view('pedidos.consulta-octalog', [
+            'company' => $company,
             'resultados' => $linhas,
             'listaPedidosConsultados' => $numeros,
             'mensagemAtualizacao' => $mensagemAtualizacao,
+            'mensagemNumerosIgnorados' => $mensagemNumerosIgnorados,
+            'listaNumerosIgnorados' => count($ignorados) ? array_values($ignorados) : [],
         ]);
     }
 

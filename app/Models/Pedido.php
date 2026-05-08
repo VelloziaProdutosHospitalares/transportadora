@@ -5,11 +5,13 @@ namespace App\Models;
 use App\Support\OctalogStatusAtividade;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pedido extends Model
 {
     protected $fillable = [
+        'company_id',
         'numero_pedido',
         'chave_nf',
         'numero_nf',
@@ -61,20 +63,41 @@ class Pedido extends Model
         return $this->hasMany(ShippingLabel::class);
     }
 
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
     /**
-     * Rótulo do status operacional Octalog: resposta inicial em `octalog_response` ou último evento de **tracking** no webhook.
+     * Rótulo do status operacional Octalog, na ordem de prioridade:
+     * 1. Último evento de tracking recebido via webhook (mais recente / automático).
+     * 2. Último status gravado pela consulta manual (/pedidos/consulta-octalog).
+     * 3. Status da resposta inicial de envio (octalog_response).
      */
     public function octalogStatusAtividadeLabel(): ?string
     {
-        $row = $this->octalogFirstResponseRow();
-        if ($row !== null) {
-            $fromApi = OctalogStatusAtividade::labelFromResponseRow($row);
-            if ($fromApi !== null) {
-                return $fromApi;
+        $fromWebhook = $this->octalogLastTrackingWebhookLabel();
+        if ($fromWebhook !== null) {
+            return $fromWebhook;
+        }
+
+        if (is_string($this->octalog_status_text) && trim($this->octalog_status_text) !== '') {
+            return trim($this->octalog_status_text);
+        }
+
+        if (is_numeric($this->octalog_status_id)) {
+            $label = OctalogStatusAtividade::labelForId((int) $this->octalog_status_id);
+            if ($label !== null) {
+                return $label;
             }
         }
 
-        return $this->octalogLastTrackingWebhookLabel();
+        $row = $this->octalogFirstResponseRow();
+        if ($row !== null) {
+            return OctalogStatusAtividade::labelFromResponseRow($row);
+        }
+
+        return null;
     }
 
     /**

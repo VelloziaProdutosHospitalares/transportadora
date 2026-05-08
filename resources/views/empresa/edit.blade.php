@@ -3,9 +3,17 @@
 @section('title', 'Empresa — '.config('app.name'))
 
 @section('content')
-    <x-page-header title="Cadastro da empresa">
+    <x-page-header
+        title="{{ $company ? 'Cadastro da empresa' : 'Nova empresa' }}"
+        :back-href="route('empresas.index')"
+        back-label="Voltar para empresas"
+    >
         <x-slot name="description">
-            <p>Preencha os dados do remetente usados na geração de etiquetas de envio.</p>
+            @if ($company)
+                <p>Preencha os dados do remetente usados na geração de etiquetas de envio.</p>
+            @else
+                <p>Adicione uma nova empresa como remetente para pedidos enviados à Octalog.</p>
+            @endif
         </x-slot>
     </x-page-header>
 
@@ -17,7 +25,7 @@
 
     @php
         $isUpdate = $company !== null;
-        $action = $isUpdate ? route('empresa.update') : route('empresa.store');
+        $action = $isUpdate ? route('empresas.update', $company) : route('empresas.store');
     @endphp
 
     <x-card>
@@ -122,7 +130,7 @@
                     @if ($company?->logo_path)
                         <div class="mt-3">
                             <p class="mb-2 text-xs text-gray-500">Logo atual:</p>
-                            <img src="{{ route('empresa.logo') }}" alt="Logo da empresa" class="h-16 w-auto rounded border border-gray-300 bg-white p-1" />
+                            <img src="{{ route('empresas.logo', $company) }}" alt="Logo da empresa" class="h-16 w-auto rounded border border-gray-300 bg-white p-1" />
                         </div>
                     @endif
                 </div>

@@ -35,7 +35,7 @@ alwaysApply: false
 
 | Área | Exemplos em `routes/web.php` / `routes/api.php` |
 | ---- | ----------------------------------------------- |
-| CRUD pedido + envio | `Route::resource('pedidos', ...)` (ações limitadas) |
-| Consulta status | `pedidos.consulta-octalog.*` |
+| CRUD pedido + envio | `Route::prefix('empresas/{company}/pedidos')->...` (index, create, store, show) |
+| Consulta status | `empresas.consulta_octalog.*` (escopo por empresa; só atualiza números da empresa corrente) |
 | SAC / webhook config | `octalog.sac.webhook.*` |
 | Webhook inbound | `POST /api/octalog/webhook` (middleware `octalog.webhook.secret`) |

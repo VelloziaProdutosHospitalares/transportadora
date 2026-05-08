@@ -6,6 +6,7 @@
 @if ($company === null)
     <x-alert variant="error" class="mb-4">
         Cadastre os dados da empresa para exibir o remetente na etiqueta térmica.
+        <a href="{{ route('empresas.index') }}" class="font-medium text-primary underline">Ir para empresas</a>
     </x-alert>
 @endif
 
