@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\DTOs\OctalogOrderData;
 use App\Exceptions\OctalogException;
+use App\Http\Requests\IndexPedidoRequest;
 use App\Http\Requests\StorePedidoRequest;
 use App\Models\Company;
 use App\Models\Pedido;
 use App\Models\ShippingLabel;
 use App\Services\OctalogService;
 use App\Support\ThermalLabelViewData;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -22,15 +24,55 @@ class PedidoController extends Controller
         private readonly OctalogService $octalogService,
     ) {}
 
-    public function index(Company $company): View
+    public function index(Company $company, IndexPedidoRequest $request): View
     {
-        $pedidos = Pedido::query()
-            ->where('company_id', $company->id)
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
+        $query = Pedido::query()->where('company_id', $company->id);
 
-        return view('pedidos.index', compact('company', 'pedidos'));
+        $validated = $request->validated();
+
+        if (! empty($validated['status'])) {
+            $query->where('status', $validated['status']);
+        }
+
+        if (! empty($validated['prazo_entrega'])) {
+            $query->where('id_prazo_entrega', (int) $validated['prazo_entrega']);
+        }
+
+        $search = isset($validated['search']) ? trim((string) $validated['search']) : '';
+        if ($search !== '') {
+            $digitsOnly = (string) preg_replace('/\D+/', '', $search);
+            $query->where(function (Builder $q) use ($search, $digitsOnly) {
+                $q->where('numero_pedido', 'like', '%'.$search.'%')
+                    ->orWhere('numero_nf', 'like', '%'.$search.'%')
+                    ->orWhere('serie_nf', 'like', '%'.$search.'%');
+                if ($digitsOnly !== '' && strlen($digitsOnly) >= 4) {
+                    $q->orWhere('chave_nf', 'like', '%'.$digitsOnly.'%');
+                }
+            });
+        }
+
+        if (! empty($validated['created_from'])) {
+            $query->whereDate('created_at', '>=', $validated['created_from']);
+        }
+        if (! empty($validated['created_to'])) {
+            $query->whereDate('created_at', '<=', $validated['created_to']);
+        }
+
+        $ordenacao = $validated['ordenacao'] ?? 'recent';
+        if ($ordenacao === 'oldest') {
+            $query->oldest();
+        } else {
+            $query->latest();
+        }
+
+        $perPage = $request->pageSize();
+        $pedidos = $query->paginate($perPage)->withQueryString();
+
+        return view('pedidos.index', [
+            'company' => $company,
+            'pedidos' => $pedidos,
+            'hasRestrictiveFilters' => $request->hasRestrictiveFilters(),
+        ]);
     }
 
     public function create(Company $company): View
