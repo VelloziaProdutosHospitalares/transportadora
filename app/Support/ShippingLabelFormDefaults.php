@@ -26,7 +26,7 @@ class ShippingLabelFormDefaults
             'state' => 'RJ',
             'volume_of' => 1,
             'notes' => 'Entregar em horário comercial.',
-            // Etiqueta térmica comum: 100 × 150 mm (≈ 4" × 6"; também existe 102 × 152 mm conforme o rolo).
+            // Etiqueta logística nacional (Mercado Livre/Correios): 100 × 150 mm; cabe em Elgin L42 Pro Full (≤108 mm de impressão útil na largura, tubete 1″).
             'label_width_mm' => 100,
             'label_height_mm' => 150,
             'show_qr_code' => false,

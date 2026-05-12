@@ -9,6 +9,16 @@ use Picqer\Barcode\BarcodeGeneratorSVG;
 
 final class ThermalLabelViewData
 {
+    /** Largura mínima de etiqueta compatível com alimentação L42 (tubete 1″). */
+    private const LABEL_WIDTH_MM_MIN = 20;
+
+    /** Largura máxima de impressão L42 (~108 mm; rolos comuns até 111 mm físicos). */
+    private const LABEL_PRINTABLE_WIDTH_MM_MAX = 108;
+
+    private const LABEL_HEIGHT_MM_MIN = 20;
+
+    private const LABEL_HEIGHT_MM_MAX = 250;
+
     /**
      * Monta os dados da etiqueta térmica a partir do pedido (snapshot gravado no envio ou retorno Octalog).
      *
@@ -77,7 +87,35 @@ final class ThermalLabelViewData
         $labelData['volume_of'] = max(1, (int) ($labelData['volume_of'] ?? 1));
         $labelData['show_qr_code'] = filter_var($labelData['show_qr_code'] ?? false, FILTER_VALIDATE_BOOLEAN);
 
+        $labelData['label_width_mm'] = self::clampMmDimension(
+            $labelData['label_width_mm'] ?? null,
+            100,
+            self::LABEL_WIDTH_MM_MIN,
+            self::LABEL_PRINTABLE_WIDTH_MM_MAX
+        );
+
+        $labelData['label_height_mm'] = self::clampMmDimension(
+            $labelData['label_height_mm'] ?? null,
+            150,
+            self::LABEL_HEIGHT_MM_MIN,
+            self::LABEL_HEIGHT_MM_MAX
+        );
+
         return $labelData;
+    }
+
+    /**
+     * @param  mixed  $value  Snapshot/API (int|string|null).
+     */
+    private static function clampMmDimension(mixed $value, int $fallback, int $min, int $max): int
+    {
+        if ($value !== null && $value !== '' && is_numeric($value)) {
+            $n = (int) round((float) $value);
+
+            return max($min, min($max, $n));
+        }
+
+        return max($min, min($max, $fallback));
     }
 
     /**

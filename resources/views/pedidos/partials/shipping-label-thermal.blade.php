@@ -13,8 +13,11 @@
 @if ($hasThermal)
     <div class="space-y-4">
         <p class="text-sm text-gray-600">
-            Dados de entrega conforme enviados à Octalog. Use <strong class="font-medium text-gray-800">Imprimir</strong> para a impressora térmica
-            ({{ (int) ($labelDataRow['label_width_mm'] ?? 100) }}×{{ (int) ($labelDataRow['label_height_mm'] ?? 150) }} mm).
+            Formato compatível com <strong class="font-medium text-gray-800">Etiquetas 100 × 150 mm</strong>
+            (padrão de envios e logística) e impressora térmica <strong class="font-medium text-gray-800">Elgin L42 Pro Full</strong>:
+            papel térmico direto ou couchê/BOPP, tubete de 25,4&nbsp;mm (1″), largura imprimível até 108&nbsp;mm.
+            No diálogo de impressão da impressora/driver, escolha tamanho de página ou rolo igual a <strong class="font-medium text-gray-800">{{ (int) ($labelDataRow['label_width_mm'] ?? 100) }} × {{ (int) ($labelDataRow['label_height_mm'] ?? 150) }} mm</strong>,
+            margens zeradas e <strong class="font-medium text-gray-800">escala real (100&nbsp;%)</strong> para coincidir com a mídia.
         </p>
         @if ($pedido->url_etiqueta)
             <p class="text-xs text-gray-500">
@@ -110,8 +113,12 @@
         @if ($hasThermalPrint)
             @media print {
                 @page {
-                    size: {{ $pageWmm }}mm {{ $pageHmm }}mm;
                     margin: 0;
+                    @if ($pageWmm <= $pageHmm)
+                        size: {{ $pageWmm }}mm {{ $pageHmm }}mm portrait;
+                    @else
+                        size: {{ $pageWmm }}mm {{ $pageHmm }}mm landscape;
+                    @endif
                 }
 
                 html,
@@ -157,7 +164,7 @@
                     min-height: 0 !important;
                     max-height: {{ $pageHmm }}mm !important;
                     margin: 0 !important;
-                    padding: 2mm !important;
+                    padding: 3mm !important;
                     box-sizing: border-box !important;
                     border: 1px solid #000 !important;
                     page-break-after: avoid !important;
