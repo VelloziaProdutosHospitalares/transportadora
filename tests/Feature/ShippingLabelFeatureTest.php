@@ -116,7 +116,7 @@ class ShippingLabelFeatureTest extends TestCase
                 'volume_of' => 1,
                 'notes' => 'Entregar em horário comercial',
                 'label_width_mm' => 100,
-                'label_height_mm' => 150,
+                'label_height_mm' => 148,
                 'show_qr_code' => false,
                 'tracking_code' => null,
             ],

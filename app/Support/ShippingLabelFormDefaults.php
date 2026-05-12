@@ -26,9 +26,9 @@ class ShippingLabelFormDefaults
             'state' => 'RJ',
             'volume_of' => 1,
             'notes' => 'Entregar em horário comercial.',
-            // Etiqueta logística nacional (Mercado Livre/Correios): 100 × 150 mm; cabe em Elgin L42 Pro Full (≤108 mm de impressão útil na largura, tubete 1″).
+            // Preset “Postcard” em drivers (ex.: Postcard 100 × 148 mm); largura dentro do limite típico das cabeças térmicas (≤108 mm úteis).
             'label_width_mm' => 100,
-            'label_height_mm' => 150,
+            'label_height_mm' => 148,
             'show_qr_code' => false,
         ];
     }

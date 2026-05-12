@@ -13,11 +13,8 @@
 @if ($hasThermal)
     <div class="space-y-4">
         <p class="text-sm text-gray-600">
-            Formato compatível com <strong class="font-medium text-gray-800">Etiquetas 100 × 150 mm</strong>
-            (padrão de envios e logística) e impressora térmica <strong class="font-medium text-gray-800">Elgin L42 Pro Full</strong>:
-            papel térmico direto ou couchê/BOPP, tubete de 25,4&nbsp;mm (1″), largura imprimível até 108&nbsp;mm.
-            No diálogo de impressão da impressora/driver, escolha tamanho de página ou rolo igual a <strong class="font-medium text-gray-800">{{ (int) ($labelDataRow['label_width_mm'] ?? 100) }} × {{ (int) ($labelDataRow['label_height_mm'] ?? 150) }} mm</strong>,
-            margens zeradas e <strong class="font-medium text-gray-800">escala real (100&nbsp;%)</strong> para coincidir com a mídia.
+            Dados de entrega conforme enviados à Octalog. Use <strong class="font-medium text-gray-800">Imprimir etiqueta</strong> para impressão térmica
+            ({{ (int) ($labelDataRow['label_width_mm'] ?? 100) }}×{{ (int) ($labelDataRow['label_height_mm'] ?? 148) }} mm).
         </p>
         @if ($pedido->url_etiqueta)
             <p class="text-xs text-gray-500">
@@ -39,7 +36,7 @@
                 :barcode-svg="$barcodeSvg"
                 :qr-code-svg="$qrCodeSvg"
                 :width-mm="(int) ($labelDataRow['label_width_mm'] ?? 100)"
-                :height-mm="(int) ($labelDataRow['label_height_mm'] ?? 150)"
+                :height-mm="(int) ($labelDataRow['label_height_mm'] ?? 148)"
             />
         </div>
     </section>
@@ -83,7 +80,7 @@
     @php
         $hasThermalPrint = $hasThermal;
         $pageWmm = $hasThermalPrint ? (int) ($labelDataRow['label_width_mm'] ?? 100) : 100;
-        $pageHmm = $hasThermalPrint ? (int) ($labelDataRow['label_height_mm'] ?? 150) : 150;
+        $pageHmm = $hasThermalPrint ? (int) ($labelDataRow['label_height_mm'] ?? 148) : 148;
     @endphp
     <style>
         .label-print-wrap {

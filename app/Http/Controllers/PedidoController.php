@@ -162,7 +162,7 @@ class PedidoController extends Controller
                     'volume_of' => max(1, (int) $validated['total_volumes']),
                     'notes' => '',
                     'label_width_mm' => 100,
-                    'label_height_mm' => 150,
+                    'label_height_mm' => 148,
                     'show_qr_code' => false,
                     'tracking_code' => null,
                 ],

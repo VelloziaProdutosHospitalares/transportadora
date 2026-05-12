@@ -96,7 +96,7 @@ final class ThermalLabelViewData
 
         $labelData['label_height_mm'] = self::clampMmDimension(
             $labelData['label_height_mm'] ?? null,
-            150,
+            148,
             self::LABEL_HEIGHT_MM_MIN,
             self::LABEL_HEIGHT_MM_MAX
         );
@@ -164,7 +164,7 @@ final class ThermalLabelViewData
             'volume_of' => 1,
             'notes' => '',
             'label_width_mm' => 100,
-            'label_height_mm' => 150,
+            'label_height_mm' => 148,
             'show_qr_code' => false,
             'tracking_code' => null,
         ];

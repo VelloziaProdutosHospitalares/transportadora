@@ -4,7 +4,7 @@
     'barcodeSvg',
     'qrCodeSvg' => null,
     'widthMm' => 100,
-    'heightMm' => 150,
+    'heightMm' => 148,
 ])
 
 @php
