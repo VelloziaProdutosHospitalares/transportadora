@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\DTOs\OctalogOrderData;
 use App\Exceptions\OctalogException;
+use App\Http\Requests\BulkResendPedidosOctalogRequest;
 use App\Http\Requests\IndexPedidoRequest;
 use App\Http\Requests\StorePedidoRequest;
 use App\Models\Company;
@@ -13,6 +14,7 @@ use App\Services\OctalogService;
 use App\Support\PedidoOctalogOrderAssembler;
 use App\Support\ThermalLabelViewData;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -350,6 +352,265 @@ class PedidoController extends Controller
         return redirect()
             ->route('empresas.pedidos.show', [$company, $pedido])
             ->with('error', 'A Octalog não aceitou o reenvio. '.$flashErro);
+    }
+
+    public function bulkResendToOctalog(Company $company, BulkResendPedidosOctalogRequest $request): RedirectResponse
+    {
+        /** @var list<int> $ids */
+        $ids = array_values(array_unique(array_map('intval', $request->validated()['pedido_ids'])));
+
+        $pedidosQuery = Pedido::query()
+            ->where('company_id', $company->id)
+            ->whereIn('id', $ids)
+            ->orderBy('id');
+
+        /** @var Collection<int, Pedido> $pedidos */
+        $pedidos = $pedidosQuery->get();
+
+        /** @var list<array{pedido: Pedido, dto: OctalogOrderData}> $eligiblePairs */
+        $eligiblePairs = [];
+        $ignoredCount = 0;
+
+        foreach ($pedidos as $pedido) {
+            if (! in_array($pedido->status, ['enviado', 'erro'], true)) {
+                $ignoredCount++;
+
+                continue;
+            }
+            $dto = PedidoOctalogOrderAssembler::toOctalogOrderData($pedido, $company);
+            if ($dto === null) {
+                $ignoredCount++;
+
+                continue;
+            }
+            $eligiblePairs[] = ['pedido' => $pedido, 'dto' => $dto];
+        }
+
+        if ($eligiblePairs === []) {
+            $msg = $ignoredCount > 0
+                ? 'Nenhum pedido era elegível para reenvio. Pedidos devem estar com status enviado ou erro e ter dados do destinatário salvos.'
+                : 'Selecione pedidos válidos para reenviar.';
+
+            return redirect()
+                ->route('empresas.pedidos.index', [$company])
+                ->withQueryString()
+                ->with('error', $msg);
+        }
+
+        $successTotal = 0;
+        $failTotal = 0;
+
+        foreach (array_chunk($eligiblePairs, OctalogService::MAX_SALVAR_PEDIDOS) as $chunk) {
+            /** @var list<array{pedido: Pedido, dto: OctalogOrderData}> $chunk */
+            $dtos = array_map(static fn (array $pair) => $pair['dto'], $chunk);
+
+            /** @var array<string, Pedido> $pedidosPorNumero */
+            $pedidosPorNumero = [];
+            foreach ($chunk as $pair) {
+                $pedidosPorNumero[$pair['pedido']->numero_pedido] = $pair['pedido'];
+            }
+
+            try {
+                $result = $this->octalogService->sendOrders($dtos);
+            } catch (OctalogException $e) {
+                $safeMessage = $e->getMessage();
+                Log::error('Octalog: exceção no reenvio em massa', [
+                    'company_id' => $company->id,
+                    'pedidos_chunk' => array_map(static fn (array $pair) => $pair['pedido']->id, $chunk),
+                    'mensagem' => $safeMessage,
+                ]);
+                foreach ($chunk as $pair) {
+                    $pair['pedido']->update([
+                        'status' => 'erro',
+                        'erro_mensagem' => $safeMessage,
+                    ]);
+                }
+                $failTotal += count($chunk);
+
+                continue;
+            }
+
+            if ($result['success'] === true) {
+                /** @var array<int|string, mixed> $dataRaw */
+                $dataRaw = is_array($result['data']) ? $result['data'] : [];
+
+                [$ok, $chunkFail] = $this->applyBulkResendChunkSuccess($chunk, $dataRaw, $pedidosPorNumero);
+                $successTotal += $ok;
+                $failTotal += $chunkFail;
+
+                continue;
+            }
+
+            /** @var array<int|string, mixed> $errorsRaw */
+            $errorsRaw = is_array($result['errors']) ? $result['errors'] : [];
+
+            $failTotal += $this->applyBulkResendChunkFailure($chunk, $errorsRaw, $pedidosPorNumero);
+        }
+
+        return $this->redirectPedidosIndexWithBulkResendFeedback(
+            $company,
+            $successTotal,
+            $failTotal,
+            $ignoredCount,
+        );
+    }
+
+    /**
+     * @param  list<array{pedido: Pedido, dto: OctalogOrderData}>  $chunk
+     * @param  array<string, Pedido>  $pedidosPorNumero
+     * @param  array<int|string, mixed>  $apiDataRaw
+     * @return array{0: int, 1: int} [successCount, failCount]
+     */
+    private function applyBulkResendChunkSuccess(array $chunk, array $apiDataRaw, array $pedidosPorNumero): array
+    {
+        $rows = $this->octalogPedidoSalvarResultRows($apiDataRaw);
+        $handledNumero = [];
+
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $num = isset($row['Pedido']) ? trim((string) $row['Pedido']) : '';
+            if ($num === '' || ! isset($pedidosPorNumero[$num])) {
+                continue;
+            }
+            $this->applySuccessfulOctalogResponse($pedidosPorNumero[$num], [$row]);
+            $handledNumero[$num] = true;
+        }
+
+        $fallbackMsg = 'Resposta da Octalog sem dados deste pedido.';
+
+        foreach ($chunk as $pair) {
+            $num = $pair['pedido']->numero_pedido;
+            if (isset($handledNumero[$num])) {
+                continue;
+            }
+            $pair['pedido']->update([
+                'status' => 'erro',
+                'erro_mensagem' => $fallbackMsg,
+            ]);
+        }
+
+        $ok = count($handledNumero);
+        $chunkSize = count($chunk);
+
+        return [$ok, max(0, $chunkSize - $ok)];
+    }
+
+    /**
+     * @param  list<array{pedido: Pedido, dto: OctalogOrderData}>  $chunk
+     * @param  array<string, Pedido>  $pedidosPorNumero
+     * @param  array<int|string, mixed>  $errorsPayload
+     */
+    private function applyBulkResendChunkFailure(array $chunk, array $errorsPayload, array $pedidosPorNumero): int
+    {
+        $updatedNums = [];
+
+        /** @var list<array<string, mixed>> $errorItems */
+        $errorItems = [];
+        if (array_is_list($errorsPayload)) {
+            foreach ($errorsPayload as $item) {
+                if (is_array($item)) {
+                    /** @var array<string, mixed> $item */
+                    $errorItems[] = $item;
+                }
+            }
+        } elseif ($errorsPayload !== []) {
+            /** @var array<string, mixed> $errorsPayload */
+            $errorItems[] = $errorsPayload;
+        }
+
+        foreach ($errorItems as $item) {
+            $num = isset($item['Pedido']) ? trim((string) $item['Pedido']) : '';
+            if ($num === '' || ! isset($pedidosPorNumero[$num])) {
+                continue;
+            }
+            $pedidosPorNumero[$num]->update([
+                'status' => 'erro',
+                'octalog_response' => $item,
+                'erro_mensagem' => $this->formatOctalogErrors([$item]),
+            ]);
+            $updatedNums[$num] = true;
+        }
+
+        $genericErroMsg = $this->formatOctalogErrors($errorsPayload);
+
+        foreach ($chunk as $pair) {
+            $num = $pair['pedido']->numero_pedido;
+            if (isset($updatedNums[$num])) {
+                continue;
+            }
+            $pair['pedido']->update([
+                'status' => 'erro',
+                'octalog_response' => is_array($errorsPayload) ? $errorsPayload : [],
+                'erro_mensagem' => $genericErroMsg,
+            ]);
+        }
+
+        return count($chunk);
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $data
+     * @return list<array<string, mixed>>
+     */
+    private function octalogPedidoSalvarResultRows(array $data): array
+    {
+        if ($data === []) {
+            return [];
+        }
+
+        if (array_is_list($data)) {
+            $filtered = [];
+
+            foreach ($data as $row) {
+                if (is_array($row)) {
+                    /** @var array<string, mixed> $row */
+                    $filtered[] = $row;
+                }
+            }
+
+            return $filtered;
+        }
+
+        if (! is_array($data)) {
+            return [];
+        }
+
+        return array_key_exists('Pedido', $data) ? [$data] : [];
+    }
+
+    private function redirectPedidosIndexWithBulkResendFeedback(
+        Company $company,
+        int $successTotal,
+        int $failTotal,
+        int $ignoredCount,
+    ): RedirectResponse {
+        $segments = [];
+
+        if ($successTotal > 0) {
+            $segments[] = $successTotal === 1
+                ? '1 pedido reenviado com sucesso'
+                : "{$successTotal} pedidos reenviados com sucesso";
+        }
+        if ($failTotal > 0) {
+            $segments[] = $failTotal === 1
+                ? '1 pedido ficou em erro na Octalog'
+                : "{$failTotal} pedidos ficaram em erro na Octalog";
+        }
+        if ($ignoredCount > 0) {
+            $segments[] = $ignoredCount === 1
+                ? '1 pedido ignorado (não elegível)'
+                : "{$ignoredCount} pedidos ignorados (não elegíveis)";
+        }
+
+        $message = implode('. ', $segments).'.';
+        $severity = ($successTotal === 0 && $failTotal > 0) ? 'error' : 'success';
+
+        return redirect()
+            ->route('empresas.pedidos.index', [$company])
+            ->withQueryString()
+            ->with($severity, $message);
     }
 
     /**

@@ -345,7 +345,7 @@ class OctalogServiceTest extends TestCase
         ];
 
         $lista = [];
-        for ($i = 0; $i < 51; $i++) {
+        for ($i = 0; $i < OctalogService::MAX_SALVAR_PEDIDOS + 1; $i++) {
             $lista[] = new OctalogOrderData(
                 pedido: 'PED-'.$i,
                 idPrazoEntrega: 6,

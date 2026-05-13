@@ -154,6 +154,11 @@
         Dica: na tela pequena, arraste a tabela lateralmente para ver todas as colunas.
     </p>
 
+    @php
+        $showBulkResendForm = $pedidos->total() > 0 && $pedidos->count() > 0;
+        $emptyColspan = $showBulkResendForm ? 7 : 6;
+    @endphp
+
     @if ($pedidos->total() > 0)
         <p class="mb-3 text-sm text-gray-600">
             Exibindo
@@ -166,14 +171,49 @@
         </p>
     @endif
 
+    @if ($showBulkResendForm)
+        <form
+            method="POST"
+            action="{{ route('empresas.pedidos.bulk_resend_octalog', $company) }}{{ request()->getQueryString() ? '?'.request()->getQueryString() : '' }}"
+            id="form-bulk-resend-pedidos"
+            class="mb-3 space-y-3"
+            onsubmit="return confirm('Reenviar os pedidos marcados à Octalog usando o mesmo número interno e os dados salvos?');"
+        >
+            @csrf
+            <div
+                class="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm shadow-sm sm:flex-row sm:items-center sm:justify-between"
+            >
+                <p class="leading-relaxed text-gray-600">
+                    Marque pedidos em <strong class="font-medium text-gray-900">Enviado</strong> ou <strong class="font-medium text-gray-900">Erro</strong>
+                    com destinatário salvo. No máximo <strong class="font-medium text-gray-900">200</strong> por envio; cada lote chama a Octalog em blocos de até
+                    <strong class="font-medium text-gray-900">50</strong> pedidos.
+                </p>
+                <x-button type="submit" variant="secondary" class="shrink-0 self-start sm:self-auto">
+                    Reenviar selecionados à Octalog
+                </x-button>
+            </div>
+
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div class="-mx-px overflow-x-auto overscroll-x-contain">
             <table class="min-w-[36rem] w-full divide-y divide-gray-200 text-left text-sm md:min-w-0" aria-describedby="pedidos-table-summary">
                 <caption id="pedidos-table-summary" class="sr-only">
-                    Lista de pedidos com número, nota fiscal, status, valor, data e ação para detalhes.
+                    Lista de pedidos com opção de seleção para reenvio, número, nota fiscal, status, valor, data e link para detalhes.
                 </caption>
                 <thead class="bg-gray-50">
                     <tr>
+                        @if ($showBulkResendForm)
+                            <th scope="col" class="w-10 whitespace-nowrap px-3 py-3 font-semibold text-gray-700">
+                                <label class="flex flex-col items-start gap-1 text-xs font-normal text-gray-600">
+                                    <span class="sr-only">Selecionar todos desta página</span>
+                                    <input
+                                        type="checkbox"
+                                        id="js-bulk-resend-select-all"
+                                        class="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30"
+                                    />
+                                    <span aria-hidden="true" class="hidden sm:inline">Todos</span>
+                                </label>
+                            </th>
+                        @endif
                         <th scope="col" class="px-4 py-3 font-semibold text-gray-700">Número</th>
                         <th scope="col" class="px-4 py-3 font-semibold text-gray-700">NF</th>
                         <th scope="col" class="px-4 py-3 font-semibold text-gray-700">Status</th>
@@ -184,7 +224,27 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
                     @forelse ($pedidos as $pedido)
+                        @php
+                            $podeReenviarAoOctalog =
+                                in_array($pedido->status, ['enviado', 'erro'], true) &&
+                                is_array($pedido->destinatario_snapshot) &&
+                                trim((string) ($pedido->destinatario_snapshot['recipient_name'] ?? '')) !== '';
+                        @endphp
                         <tr class="transition-colors hover:bg-gray-50/80">
+                            @if ($showBulkResendForm)
+                                <td class="whitespace-nowrap px-3 py-3 align-middle">
+                                    <input
+                                        type="checkbox"
+                                        name="pedido_ids[]"
+                                        value="{{ $pedido->id }}"
+                                        class="js-bulk-resend-cb h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary/30"
+                                        @disabled(! $podeReenviarAoOctalog)
+                                        @if (! $podeReenviarAoOctalog)
+                                            title="Reenvio em massa: só pedidos enviados ou com erro e com dados do destinatário salvos."
+                                        @endif
+                                    />
+                                </td>
+                            @endif
                             <td class="whitespace-nowrap px-4 py-3 font-medium text-gray-900">{{ $pedido->numero_formatado }}</td>
                             <td class="whitespace-nowrap px-4 py-3 text-gray-700">{{ $pedido->numero_nf }} / {{ $pedido->serie_nf }}</td>
                             <td class="max-w-[14rem] px-4 py-3">
@@ -214,7 +274,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-4 py-14 text-center">
+                            <td colspan="{{ $emptyColspan }}" class="px-4 py-14 text-center">
                                 @if ($hasRestrictiveFilters ?? false)
                                     <p class="text-sm font-medium text-gray-900">Nenhum pedido encontrado</p>
                                     <p class="mt-1 text-sm text-gray-600">Ajuste os filtros ou limpe-os para ver a lista inteira.</p>
@@ -240,9 +300,32 @@
         </div>
     </div>
 
+    @if ($showBulkResendForm)
+        </form>
+    @endif
+
     @if ($pedidos->hasPages())
         <div class="mt-6">
             {{ $pedidos->links() }}
         </div>
     @endif
 @endsection
+
+@push('scripts')
+    @if ($showBulkResendForm ?? false)
+        <script>
+            (function () {
+                var master = document.getElementById('js-bulk-resend-select-all');
+                if (!master) {
+                    return;
+                }
+                master.addEventListener('change', function () {
+                    var on = master.checked;
+                    document.querySelectorAll('input.js-bulk-resend-cb:not(:disabled)').forEach(function (el) {
+                        el.checked = on;
+                    });
+                });
+            })();
+        </script>
+    @endif
+@endpush

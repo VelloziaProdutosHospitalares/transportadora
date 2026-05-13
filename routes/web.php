@@ -60,6 +60,10 @@ Route::prefix('empresas')->group(function () {
             Route::get('pedidos', [PedidoController::class, 'index'])->name('pedidos.index');
             Route::get('pedidos/criar', [PedidoController::class, 'create'])->name('pedidos.create');
             Route::post('pedidos', [PedidoController::class, 'store'])->name('pedidos.store');
+            Route::post(
+                'pedidos/reenviar-em-massa-octalog',
+                [PedidoController::class, 'bulkResendToOctalog'],
+            )->name('pedidos.bulk_resend_octalog');
             Route::get('pedidos/{pedido}', [PedidoController::class, 'show'])->name('pedidos.show');
             Route::post('pedidos/{pedido}/reenviar-octalog', [PedidoController::class, 'resendToOctalog'])
                 ->name('pedidos.resend_octalog');

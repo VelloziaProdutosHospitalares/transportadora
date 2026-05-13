@@ -19,6 +19,9 @@ class OctalogService
     /** Máximo de números de pedido por chamada a `POST /pedido/listar` (contrato Octalog / OpenAPI). */
     public const MAX_LISTAR_PEDIDOS = 100;
 
+    /** Máximo de pedidos por chamada `POST /pedido/salvar` (contrato Octalog). */
+    public const MAX_SALVAR_PEDIDOS = 50;
+
     /** Minutos de validade do cache do token (margem de segurança antes da expiração real). */
     private const TOKEN_TTL_MINUTES = 50;
 
@@ -44,12 +47,14 @@ class OctalogService
      * @param  OctalogOrderData[]  $fretes
      * @return array{success: bool, data: array, errors: array}
      *
-     * @throws OctalogException quando não é possível conectar à API, autenticar, ou lista > 50 pedidos
+     * @throws OctalogException quando não é possível conectar à API, autenticar, ou lista > {@see self::MAX_SALVAR_PEDIDOS} pedidos
      */
     public function sendOrders(array $fretes): array
     {
-        if (count($fretes) > 50) {
-            throw new OctalogException('A Octalog aceita no máximo 50 pedidos por envio (contrato POST /pedido/salvar).');
+        if (count($fretes) > self::MAX_SALVAR_PEDIDOS) {
+            throw new OctalogException(
+                'A Octalog aceita no máximo '.self::MAX_SALVAR_PEDIDOS.' pedidos por envio (contrato POST /pedido/salvar).',
+            );
         }
 
         $payload = array_map(
