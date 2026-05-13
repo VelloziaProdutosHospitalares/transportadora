@@ -192,6 +192,7 @@
                     Reenviar selecionados à Octalog
                 </x-button>
             </div>
+    @endif
 
     <div class="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
         <div class="-mx-px overflow-x-auto overscroll-x-contain">
