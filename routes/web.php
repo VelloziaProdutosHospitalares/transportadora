@@ -61,6 +61,8 @@ Route::prefix('empresas')->group(function () {
             Route::get('pedidos/criar', [PedidoController::class, 'create'])->name('pedidos.create');
             Route::post('pedidos', [PedidoController::class, 'store'])->name('pedidos.store');
             Route::get('pedidos/{pedido}', [PedidoController::class, 'show'])->name('pedidos.show');
+            Route::post('pedidos/{pedido}/reenviar-octalog', [PedidoController::class, 'resendToOctalog'])
+                ->name('pedidos.resend_octalog');
 
             Route::get('etiquetas', [ShippingLabelController::class, 'index'])->name('etiquetas.index');
             Route::post(

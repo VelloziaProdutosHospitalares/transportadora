@@ -10,6 +10,7 @@ use App\Models\Company;
 use App\Models\Pedido;
 use App\Models\ShippingLabel;
 use App\Services\OctalogService;
+use App\Support\PedidoOctalogOrderAssembler;
 use App\Support\ThermalLabelViewData;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -155,6 +156,34 @@ class PedidoController extends Controller
             destinatario: $destinatario,
         );
 
+        $pedido->update([
+            'destinatario_snapshot' => [
+                'recipient_name' => $validated['destinatario_nome'],
+                'document' => $docDest !== '' ? $docDest : null,
+                'phone' => $telDest !== '' ? $telDest : null,
+                'email' => $emailDest !== '' ? $emailDest : null,
+                'postal_code' => preg_replace('/\D+/', '', (string) $validated['destinatario_cep']),
+                'street' => $validated['destinatario_endereco'],
+                'number' => $validated['destinatario_numero'],
+                'complement' => '',
+                'district' => $validated['destinatario_bairro'],
+                'city' => $validated['destinatario_cidade'],
+                'state' => strtoupper($validated['destinatario_uf']),
+                'weight_grams' => 1000,
+                'service' => match ((int) $validated['id_prazo_entrega']) {
+                    6 => 'D+1',
+                    15 => 'D+2',
+                    default => 'Envio',
+                },
+                'volume_of' => max(1, (int) $validated['total_volumes']),
+                'notes' => '',
+                'label_width_mm' => 100,
+                'label_height_mm' => 148,
+                'show_qr_code' => false,
+                'tracking_code' => null,
+            ],
+        ]);
+
         try {
             $result = $this->octalogService->sendOrders([$orderData]);
         } catch (OctalogException $e) {
@@ -177,45 +206,8 @@ class PedidoController extends Controller
         if ($result['success'] === true) {
             /** @var array<int|string, mixed> $data */
             $data = is_array($result['data']) ? $result['data'] : [];
-            $urlEtiqueta = $this->extractLabelUrl($data);
 
-            $pedido->update([
-                'status' => 'enviado',
-                'octalog_response' => $data,
-                'url_etiqueta' => $urlEtiqueta,
-                'erro_mensagem' => null,
-                'destinatario_snapshot' => [
-                    'recipient_name' => $validated['destinatario_nome'],
-                    'document' => $docDest !== '' ? $docDest : null,
-                    'phone' => $telDest !== '' ? $telDest : null,
-                    'postal_code' => preg_replace('/\D+/', '', (string) $validated['destinatario_cep']),
-                    'street' => $validated['destinatario_endereco'],
-                    'number' => $validated['destinatario_numero'],
-                    'complement' => '',
-                    'district' => $validated['destinatario_bairro'],
-                    'city' => $validated['destinatario_cidade'],
-                    'state' => strtoupper($validated['destinatario_uf']),
-                    'weight_grams' => 1000,
-                    'service' => match ((int) $validated['id_prazo_entrega']) {
-                        6 => 'D+1',
-                        15 => 'D+2',
-                        default => 'Envio',
-                    },
-                    'volume_of' => max(1, (int) $validated['total_volumes']),
-                    'notes' => '',
-                    'label_width_mm' => 100,
-                    'label_height_mm' => 148,
-                    'show_qr_code' => false,
-                    'tracking_code' => null,
-                ],
-            ]);
-
-            if ($urlEtiqueta) {
-                ShippingLabel::query()->updateOrCreate(
-                    ['pedido_id' => $pedido->id, 'source' => ShippingLabel::SOURCE_OCTALOG],
-                    ['external_url' => $urlEtiqueta]
-                );
-            }
+            $this->applySuccessfulOctalogResponse($pedido, $data);
 
             return redirect()
                 ->route('empresas.pedidos.show', [$company, $pedido])
@@ -274,6 +266,90 @@ class PedidoController extends Controller
             'qrCodeSvg' => $qrCodeSvg,
             'octalogShippingLabel' => $octalogShippingLabel,
         ]);
+    }
+
+    /**
+     * @param  array<int|string, mixed>  $apiData
+     */
+    private function applySuccessfulOctalogResponse(Pedido $pedido, array $apiData): void
+    {
+        $urlEtiqueta = $this->extractLabelUrl($apiData);
+
+        $pedido->update([
+            'status' => 'enviado',
+            'octalog_response' => $apiData,
+            'url_etiqueta' => $urlEtiqueta,
+            'erro_mensagem' => null,
+        ]);
+
+        if ($urlEtiqueta) {
+            ShippingLabel::query()->updateOrCreate(
+                ['pedido_id' => $pedido->id, 'source' => ShippingLabel::SOURCE_OCTALOG],
+                ['external_url' => $urlEtiqueta]
+            );
+        }
+    }
+
+    public function resendToOctalog(Company $company, Pedido $pedido): RedirectResponse
+    {
+        if (! in_array($pedido->status, ['enviado', 'erro'], true)) {
+            return redirect()
+                ->route('empresas.pedidos.show', [$company, $pedido])
+                ->with('error', 'Só é possível reenviar pedidos em status enviado ou com erro à Octalog.');
+        }
+
+        $orderData = PedidoOctalogOrderAssembler::toOctalogOrderData($pedido, $company);
+        if ($orderData === null) {
+            return redirect()
+                ->route('empresas.pedidos.show', [$company, $pedido])
+                ->with('error', 'Não há dados de destinatário salvos para este pedido. Use um novo cadastro.');
+        }
+
+        try {
+            $result = $this->octalogService->sendOrders([$orderData]);
+        } catch (OctalogException $e) {
+            $safeMessage = $e->getMessage();
+            Log::error('Octalog: exceção ao reenviar pedido', [
+                'pedido_id' => $pedido->id,
+                'mensagem' => $safeMessage,
+            ]);
+
+            $pedido->update([
+                'status' => 'erro',
+                'erro_mensagem' => $safeMessage,
+            ]);
+
+            return redirect()
+                ->route('empresas.pedidos.show', [$company, $pedido])
+                ->with('error', 'Não foi possível reenviar à Octalog. '.$safeMessage);
+        }
+
+        if ($result['success'] === true) {
+            /** @var array<int|string, mixed> $data */
+            $data = is_array($result['data']) ? $result['data'] : [];
+
+            $this->applySuccessfulOctalogResponse($pedido, $data);
+
+            return redirect()
+                ->route('empresas.pedidos.show', [$company, $pedido])
+                ->with('success', 'Pedido reenviado à Octalog com sucesso.');
+        }
+
+        $erroDetalhe = $this->formatOctalogErrors($result['errors'] ?? []);
+
+        $pedido->update([
+            'status' => 'erro',
+            'octalog_response' => is_array($result['errors']) ? $result['errors'] : [],
+            'erro_mensagem' => $erroDetalhe,
+        ]);
+
+        $flashErro = mb_strlen($erroDetalhe) > 400
+            ? mb_substr($erroDetalhe, 0, 400).'…'
+            : $erroDetalhe;
+
+        return redirect()
+            ->route('empresas.pedidos.show', [$company, $pedido])
+            ->with('error', 'A Octalog não aceitou o reenvio. '.$flashErro);
     }
 
     /**

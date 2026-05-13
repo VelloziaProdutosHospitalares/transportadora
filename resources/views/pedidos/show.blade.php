@@ -4,6 +4,19 @@
 
 @section('content')
     <x-page-header title="Pedido {{ $pedido->numero_formatado }} — {{ $company->trade_name }}" :back-href="route('empresas.pedidos.index', $company)" back-label="Voltar para pedidos">
+        @if (in_array($pedido->status, ['enviado', 'erro'], true))
+            <x-slot name="actions">
+                <form
+                    method="POST"
+                    action="{{ route('empresas.pedidos.resend_octalog', [$company, $pedido]) }}"
+                    class="inline-flex"
+                    onsubmit="return confirm('Reenviar este pedido à Octalog usando o mesmo número interno e os dados salvos no cadastro?');"
+                >
+                    @csrf
+                    <x-button type="submit" variant="secondary">Reenviar à Octalog</x-button>
+                </form>
+            </x-slot>
+        @endif
         <x-slot name="description">
             <p class="flex flex-wrap items-center gap-2">
                 <span>Status:</span>
