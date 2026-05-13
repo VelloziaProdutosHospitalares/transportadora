@@ -91,8 +91,8 @@ class PedidoBulkResendOctalogTest extends TestCase
                 ->andReturn([
                     'success' => true,
                     'data' => [
-                        ['Pedido' => 'PED-BULK-001', 'UrlEtiqueta' => 'https://exemplo.test/1.pdf'],
-                        ['Pedido' => 'PED-BULK-002', 'UrlEtiqueta' => 'https://exemplo.test/2.pdf'],
+                        ['Pedido' => '001', 'UrlEtiqueta' => 'https://exemplo.test/1.pdf'],
+                        ['Pedido' => '002', 'UrlEtiqueta' => 'https://exemplo.test/2.pdf'],
                     ],
                     'errors' => [],
                 ]);

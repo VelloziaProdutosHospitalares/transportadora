@@ -49,7 +49,7 @@ class OctalogInboundWebhookProcessor
             return;
         }
 
-        $pedido = Pedido::query()->where('numero_pedido', $numero)->first();
+        $pedido = Pedido::primeiroPorValorPedidoRespondidoOctalog($numero);
         if ($pedido === null) {
             $skipped++;
 

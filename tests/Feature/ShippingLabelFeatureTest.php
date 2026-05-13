@@ -126,7 +126,7 @@ class ShippingLabelFeatureTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('CLIENTE TESTE', false);
-        $response->assertSee('PED-20260429-99999', false);
+        $response->assertSee('2026042999999', false);
         $response->assertSee('<svg', false);
     }
 

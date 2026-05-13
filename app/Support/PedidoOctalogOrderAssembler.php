@@ -72,7 +72,7 @@ final class PedidoOctalogOrderAssembler
         ];
 
         return new OctalogOrderData(
-            pedido: $pedido->numero_pedido,
+            pedido: $pedido->numeroSomenteDigitosParaOctalog(),
             idPrazoEntrega: (int) $pedido->id_prazo_entrega,
             totalVolumes: max(1, (int) $pedido->total_volumes),
             dataVenda: null,

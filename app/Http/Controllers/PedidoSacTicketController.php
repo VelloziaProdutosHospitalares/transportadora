@@ -68,7 +68,7 @@ class PedidoSacTicketController extends Controller
                 ->with('error', 'Ticket disponível apenas para pedidos enviados.');
         }
 
-        $payload = $request->toOctalogPayload($pedido->numero_pedido);
+        $payload = $request->toOctalogPayload($pedido->numeroSomenteDigitosParaOctalog());
 
         try {
             $result = $this->sacService->createTicket($payload);
@@ -118,7 +118,7 @@ class PedidoSacTicketController extends Controller
                 ->with('error', 'Cancelamento disponível apenas para pedidos enviados.');
         }
 
-        $payload = $request->toOctalogPayload($pedido->numero_pedido);
+        $payload = $request->toOctalogPayload($pedido->numeroSomenteDigitosParaOctalog());
 
         try {
             $result = $this->sacService->cancelTicket($payload);

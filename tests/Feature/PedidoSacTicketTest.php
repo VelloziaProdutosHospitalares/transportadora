@@ -109,7 +109,7 @@ class PedidoSacTicketTest extends TestCase
             $body = json_decode($request->body(), true);
 
             return is_array($body)
-                && ($body['Pedido'] ?? '') === $pedido->numero_pedido
+                && ($body['Pedido'] ?? '') === $pedido->numeroSomenteDigitosParaOctalog()
                 && (int) ($body['IDMotivo'] ?? 0) === 3;
         });
     }

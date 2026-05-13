@@ -76,9 +76,10 @@ final class ThermalLabelViewData
     private static function enrich(array $labelData): array
     {
         $cepDigits = (string) ($labelData['postal_code'] ?? '');
-        /** Código de barras igual ao número interno (ex.: PED-20260513-00032), formato Code 128. */
-        $orderNum = preg_replace('/\s+/', '', trim((string) ($labelData['order_number'] ?? '')));
-        $labelData['barcode_plain'] = $orderNum;
+        /** Código de barras apenas com dígitos; o número interno em tela continua PED-…. */
+        $orderCompact = preg_replace('/\s+/', '', trim((string) ($labelData['order_number'] ?? '')));
+        $digitsOnly = preg_replace('/\D+/', '', $orderCompact);
+        $labelData['barcode_plain'] = $digitsOnly !== '' ? $digitsOnly : $orderCompact;
         $labelData['cep_formatted'] = strlen($cepDigits) === 8
             ? substr($cepDigits, 0, 5).'-'.substr($cepDigits, 5)
             : $cepDigits;

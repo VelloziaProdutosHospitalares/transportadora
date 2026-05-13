@@ -48,6 +48,52 @@ class Pedido extends Model
         return $this->numero_pedido;
     }
 
+    /**
+     * Somente dígitos enviados no campo Pedido para a Octalog e impressos na etiqueta (código de barras).
+     * Ex.: {@code PED-20260513-00032} → {@code 2026051300032}.
+     */
+    public function numeroSomenteDigitosParaOctalog(): string
+    {
+        $digits = preg_replace('/\D+/', '', (string) $this->numero_pedido);
+
+        return $digits !== '' ? $digits : $this->numero_pedido;
+    }
+
+    /**
+     * Resolve o pedido quando a Octalog devolve Pedido apenas com dígitos ou no formato histórico PED-*.
+     */
+    public static function primeiroPorValorPedidoRespondidoOctalog(?string $valorInformado): ?self
+    {
+        if ($valorInformado === null) {
+            return null;
+        }
+
+        $t = trim((string) $valorInformado);
+        if ($t === '') {
+            return null;
+        }
+
+        $byExact = self::query()->where('numero_pedido', $t)->first();
+        if ($byExact !== null) {
+            return $byExact;
+        }
+
+        $norm = preg_replace('/\D+/', '', $t);
+        if ($norm === '') {
+            return null;
+        }
+
+        if (preg_match('/^(\d{8})(\d{5})$/', $norm, $m)) {
+            $canonical = 'PED-'.$m[1].'-'.$m[2];
+            $match = self::query()->where('numero_pedido', $canonical)->first();
+            if ($match !== null) {
+                return $match;
+            }
+        }
+
+        return self::query()->where('numero_pedido', $norm)->first();
+    }
+
     public function scopeEnviados(Builder $query): Builder
     {
         return $query->where('status', 'enviado');

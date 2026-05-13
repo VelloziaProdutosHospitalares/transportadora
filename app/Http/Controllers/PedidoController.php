@@ -149,7 +149,7 @@ class PedidoController extends Controller
         ];
 
         $orderData = new OctalogOrderData(
-            pedido: $pedido->numero_pedido,
+            pedido: $pedido->numeroSomenteDigitosParaOctalog(),
             idPrazoEntrega: (int) $validated['id_prazo_entrega'],
             totalVolumes: (int) $validated['total_volumes'],
             dataVenda: null,
@@ -391,10 +391,7 @@ class PedidoController extends Controller
                 ? 'Nenhum pedido era elegível para reenvio. Pedidos devem estar com status enviado ou erro e ter dados do destinatário salvos.'
                 : 'Selecione pedidos válidos para reenviar.';
 
-            return redirect()
-                ->route('empresas.pedidos.index', [$company])
-                ->withQueryString()
-                ->with('error', $msg);
+            return $this->redirectToPedidosIndex($company)->with('error', $msg);
         }
 
         $successTotal = 0;
@@ -407,7 +404,7 @@ class PedidoController extends Controller
             /** @var array<string, Pedido> $pedidosPorNumero */
             $pedidosPorNumero = [];
             foreach ($chunk as $pair) {
-                $pedidosPorNumero[$pair['pedido']->numero_pedido] = $pair['pedido'];
+                $pedidosPorNumero[$pair['pedido']->numeroSomenteDigitosParaOctalog()] = $pair['pedido'];
             }
 
             try {
@@ -470,18 +467,19 @@ class PedidoController extends Controller
             if (! is_array($row)) {
                 continue;
             }
-            $num = isset($row['Pedido']) ? trim((string) $row['Pedido']) : '';
-            if ($num === '' || ! isset($pedidosPorNumero[$num])) {
+            $numRaw = isset($row['Pedido']) ? trim((string) $row['Pedido']) : '';
+            $key = $numRaw !== '' ? (preg_replace('/\D+/', '', $numRaw) ?: $numRaw) : '';
+            if ($key === '' || ! isset($pedidosPorNumero[$key])) {
                 continue;
             }
-            $this->applySuccessfulOctalogResponse($pedidosPorNumero[$num], [$row]);
-            $handledNumero[$num] = true;
+            $this->applySuccessfulOctalogResponse($pedidosPorNumero[$key], [$row]);
+            $handledNumero[$key] = true;
         }
 
         $fallbackMsg = 'Resposta da Octalog sem dados deste pedido.';
 
         foreach ($chunk as $pair) {
-            $num = $pair['pedido']->numero_pedido;
+            $num = $pair['pedido']->numeroSomenteDigitosParaOctalog();
             if (isset($handledNumero[$num])) {
                 continue;
             }
@@ -521,22 +519,23 @@ class PedidoController extends Controller
         }
 
         foreach ($errorItems as $item) {
-            $num = isset($item['Pedido']) ? trim((string) $item['Pedido']) : '';
-            if ($num === '' || ! isset($pedidosPorNumero[$num])) {
+            $numRaw = isset($item['Pedido']) ? trim((string) $item['Pedido']) : '';
+            $key = $numRaw !== '' ? (preg_replace('/\D+/', '', $numRaw) ?: $numRaw) : '';
+            if ($key === '' || ! isset($pedidosPorNumero[$key])) {
                 continue;
             }
-            $pedidosPorNumero[$num]->update([
+            $pedidosPorNumero[$key]->update([
                 'status' => 'erro',
                 'octalog_response' => $item,
                 'erro_mensagem' => $this->formatOctalogErrors([$item]),
             ]);
-            $updatedNums[$num] = true;
+            $updatedNums[$key] = true;
         }
 
         $genericErroMsg = $this->formatOctalogErrors($errorsPayload);
 
         foreach ($chunk as $pair) {
-            $num = $pair['pedido']->numero_pedido;
+            $num = $pair['pedido']->numeroSomenteDigitosParaOctalog();
             if (isset($updatedNums[$num])) {
                 continue;
             }
@@ -607,10 +606,22 @@ class PedidoController extends Controller
         $message = implode('. ', $segments).'.';
         $severity = ($successTotal === 0 && $failTotal > 0) ? 'error' : 'success';
 
-        return redirect()
-            ->route('empresas.pedidos.index', [$company])
-            ->withQueryString()
-            ->with($severity, $message);
+        return $this->redirectToPedidosIndex($company)->with($severity, $message);
+    }
+
+    /**
+     * Lista de pedidos com os mesmos filtros da requisição atual (GET).
+     * Observação: RedirectResponse não implementa withQueryString() (isso existe no paginator).
+     */
+    private function redirectToPedidosIndex(Company $company): RedirectResponse
+    {
+        $url = route('empresas.pedidos.index', [$company]);
+        $qs = request()->getQueryString();
+        if (is_string($qs) && $qs !== '') {
+            $url .= '?'.$qs;
+        }
+
+        return redirect()->to($url);
     }
 
     /**
